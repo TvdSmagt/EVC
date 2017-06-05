@@ -18,7 +18,7 @@ using namespace cv;
 using namespace std;
 // Global variables
 enum DriveCommand {DRIVE_STRAIGHT=0,TURN_LEFT,TURN_RIGHT};
-enum SignDetected {SIGN_NONE=0,SIGN_LEFT,SIGN_RIGHT, SIGN_STRAIGHT, SIGN_STOP, SIGN_UTURN, SIGN_UNKNOWN};
+enum SignDetected {SIGN_NONE=0,SIGN_LEFT,SIGN_RIGHT, SIGN_STRAIGHT, SIGN_STOP, SIGN_U_TURN, SIGN_UNKNOWN};
 Mat src,dst,src_crop, dst_color, gray, thresh , hough;
 Mat src_path,dst_path,src_sign,dst_sign;
 float pctCropHeight = 0.1;
