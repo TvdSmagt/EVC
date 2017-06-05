@@ -7,7 +7,9 @@ project(EVC_FULL)
 # Find OpenCV, you may need to set OpenCV_DIR variable
 # to the absolute path to the directory containing OpenCVConfig.cmake file
 # via the command line or GUI
+set(raspicam_DIR "/usr/local/lib/cmake")
 find_package(OpenCV REQUIRED)
+find_package(raspicam REQUIRED)
 
 # If the package has been found, several variables will
 # be set, you can find the full list with descriptions
@@ -27,5 +29,5 @@ endif()
 add_executable(EVC_FULL EVC_FULL.cpp)
 
 # Link your application with OpenCV libraries
-target_link_libraries(EVC_FULL ${OpenCV_LIBS})
+target_link_libraries(EVC_FULL ${OpenCV_LIBS} ${raspicam_CV_LIBS})
 

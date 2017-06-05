@@ -7,6 +7,7 @@
 #include <opencv2/objdetect.hpp>
 #include <iostream>
 #include <vector>
+#include <raspicam/raspicam.h>
 //C
 #include <stdio.h>
 //C++
@@ -78,12 +79,17 @@ int main(int argc, char* argv[])
 }
 void processVideo(char* videoFilename) {
     //create the capture object
-    VideoCapture capture(videoFilename);
-    if(!capture.isOpened()){
+    //VideoCapture capture(videoFilename);
+    /*if(!capture.isOpened()){
         //error in opening the video input
         cerr << "Unable to open video file: " << videoFilename << endl;
         exit(EXIT_FAILURE);
-    }
+    }*/
+	raspicam::RaspiCam_Cv Camera;
+	Camera.set( CV_CAP_PROP_FORMAT, CV_8UC1 );
+	if (!Camera.open()) {cerr<<"Error opening the camera"<<endl;return -1;}
+    	//Start capture
+
     //Get screen sizes
     dWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
     dHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
@@ -97,11 +103,14 @@ void processVideo(char* videoFilename) {
     ITER = 0;
     while( keyboard != 'q' && keyboard != 27 ){
         //read the current frame
-        if(!capture.read(src)) {
+
+        Camera.grab();
+        Camera.retrieve ( src);
+        /*if(!capture.read(src)) {
             cerr << "Unable to read next frame." << endl;
             cerr << "Exiting..." << endl;
             exit(EXIT_FAILURE);
-        }
+        }*/
         //Start processing frame
         if (ITER % FrameSkip==FrameSkip/5){
         //Crop image to remove top part which is not of interest
@@ -135,8 +144,10 @@ void processVideo(char* videoFilename) {
         ITER++;
         keyboard = (char)waitKey( 30 );
     }
+    cout<<"Stop camera..."<<endl;
+    Camera.release();
     //delete capture object
-    capture.release();
+    //capture.release();
 }
 
 int findPath(InputArray src, OutputArray dst, bool display){
