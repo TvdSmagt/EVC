@@ -106,7 +106,7 @@ void processVideo(char* videoFilename) {
         if (ITER % FrameSkip==FrameSkip/5){
         //Crop image to remove top part which is not of interest
         src_crop = src(myROI);
-        int iDirPath = findPath(src_path,dst_path,false);
+        int iDirPath = findPath(src_path,dst_path,true);
         int iDirSign = findSign(src_sign,dst_sign,false);
 
         //Give commands
@@ -127,9 +127,9 @@ void processVideo(char* videoFilename) {
 				break;
 			}
 			}
-	    	namedWindow("Result", WINDOW_NORMAL);
-	    	cv::resizeWindow("Result", dWidth, dHeight);
-	    	imshow("Result",src);
+	    	//namedWindow("Result", WINDOW_NORMAL);
+	    	//cv::resizeWindow("Result", dWidth, dHeight);
+	    	//imshow("Result",src);
         }
         //Finalize
         ITER++;
