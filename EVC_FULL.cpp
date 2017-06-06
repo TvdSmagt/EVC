@@ -7,7 +7,7 @@
 #include <opencv2/objdetect.hpp>
 #include <iostream>
 #include <vector>
-#include <raspicam/raspicam.h>
+#include <raspicam/raspicam_cv.h>
 //C
 #include <stdio.h>
 //C++
@@ -20,8 +20,8 @@ using namespace std;
 // Global variables
 enum DriveCommand {DRIVE_STRAIGHT=0,TURN_LEFT,TURN_RIGHT};
 enum SignDetected {SIGN_NONE=0,SIGN_LEFT,SIGN_RIGHT, SIGN_STRAIGHT, SIGN_STOP, SIGN_U_TURN, SIGN_UNKNOWN};
-Mat src,dst,src_crop, dst_color, gray, thresh , hough;
-Mat src_path,dst_path,src_sign,dst_sign;
+cv::Mat src,dst,src_crop, dst_color, gray, thresh , hough;
+cv::Mat src_path,dst_path,src_sign,dst_sign;
 float pctCropHeight = 0.1;
 int iThresh = 60;
 int maxLines = 25;
@@ -50,13 +50,10 @@ void help()
 {
     cout
     << "--------------------------------------------------------------------------" << endl
-    << "This program shows how to use background subtraction methods provided by "  << endl
-    << " OpenCV. You can process both videos (-vid) and images (-img)."             << endl
-                                                                                    << endl
+    << "This program is used for the Embedded Visual Control Project for Group 7."  << endl                                                                                   				     << endl
     << "Usage:"                                                                     << endl
-    << "./bg_sub {-vid <video filename>|-img <image filename>}"                     << endl
+    << "./bg_sub {-vid <video filename>}"                     			    << endl
     << "for example: ./bg_sub -vid video.avi"                                       << endl
-    << "or: ./bg_sub -img /data/images/1.png"                                       << endl
     << "--------------------------------------------------------------------------" << endl
     << endl;
 }
@@ -86,17 +83,17 @@ void processVideo(char* videoFilename) {
         exit(EXIT_FAILURE);
     }*/
 	raspicam::RaspiCam_Cv Camera;
-	Camera.set( CV_CAP_PROP_FORMAT, CV_8UC1 );
-	if (!Camera.open()) {cerr<<"Error opening the camera"<<endl;return -1;}
+	Camera.set( CV_CAP_PROP_FORMAT, CV_8UC3 );
+	if (!Camera.open()) {cerr<<"Error opening the camera"<<endl;exit(EXIT_FAILURE);}
     	//Start capture
 
     //Get screen sizes
-    dWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
-    dHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
+    dWidth = Camera.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
+    dHeight = Camera.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
     //Set Cropping parameters
     float yFl = float(dHeight) * pctCropHeight;
     int y = int(yFl + 0.5);
-    cv::Rect myROI(0, y, dWidth, dHeight-y);
+    cv::Rect myROI(0,y,dWidth,dHeight-y);
 
     //read input data. ESC or 'q' for quitting
     keyboard = 0;
@@ -104,17 +101,28 @@ void processVideo(char* videoFilename) {
     while( keyboard != 'q' && keyboard != 27 ){
         //read the current frame
 
-        Camera.grab();
-        Camera.retrieve ( src);
-        /*if(!capture.read(src)) {
+        if(! Camera.grab()){
+            cerr << "Unable to read next frame." << endl;
+            cerr << "Exiting..." << endl;
+            exit(EXIT_FAILURE);
+        }
+	Camera.retrieve (src);
+	/*if(!capture.read(src)) {
             cerr << "Unable to read next frame." << endl;
             cerr << "Exiting..." << endl;
             exit(EXIT_FAILURE);
         }*/
         //Start processing frame
-        if (ITER % FrameSkip==FrameSkip/5){
+	//cout << "\n" << ITER;
+        if (ITER % FrameSkip==FrameSkip/5 && !src.empty() && ITER > 20){
+	cout << "\n" << ITER << " processing image...";
         //Crop image to remove top part which is not of interest
-        src_crop = src(myROI);
+        //src_crop = src(myROI);
+	src_path = src(myROI);
+	/*processFrame(src_path, thresh, hough, dWidth, dHeight); 
+	cout << dWidth << " " << dHeight;
+	imshow("Result",hough);
+        int iDirPath = 0; */
         int iDirPath = findPath(src_path,dst_path,true);
         int iDirSign = findSign(src_sign,dst_sign,false);
 
@@ -122,17 +130,17 @@ void processVideo(char* videoFilename) {
 			switch (iDirPath){
 			case TURN_LEFT :{
 				goLeft(20);
-				putText(src,"Go Left",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
+				//putText(src,"Go Left",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
 				break;
 			}
 			case TURN_RIGHT:{
 				goRight(20);
-				putText(src,"Go Right",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
+				//putText(src,"Go Right",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
 				break;
 			}
 			case DRIVE_STRAIGHT:{
 				goForward();
-				putText(src,"Go Straight",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
+				//putText(src,"Go Straight",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
 				break;
 			}
 			}
@@ -157,7 +165,7 @@ int findPath(InputArray src, OutputArray dst, bool display){
 	//Background subtraction?
 	//Gaussian blur?
 
-	processFrame(src_crop,thresh,hough,dWidth,dHeight);
+	processFrame(src,thresh,hough,dWidth,dHeight);
 	//processFrame_adaptive(src_crop,thresh,hough,dWidth,dHeight);
 
 	//Process results into a working roadmap
@@ -202,16 +210,18 @@ int findPath(InputArray src, OutputArray dst, bool display){
 			direction = DRIVE_STRAIGHT;
 		}
 	}
-
+	hough.copyTo(dst);
 	if (display){
 	//Display different versions
-	Images.push_back(src_crop);
+	Mat srcc;
+	src.copyTo(srcc);
+	Images.push_back(srcc);
 	Images.push_back(thresh);
 	Images.push_back(hough);
 	Images.push_back(command);
 	Mat canvas = makeCanvas(Images, dHeight,2);
 	namedWindow("Canvas", WINDOW_NORMAL);
-	cv::resizeWindow("Canvas", dWidth, dHeight);
+	cv::resizeWindow("Canvas", dWidth/4, dHeight/4);
 	imshow("Canvas",canvas);
 	}
 	return direction;
@@ -224,17 +234,17 @@ int findSign(InputArray src, OutputArray dst, bool display){
 void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dWidth, double dHeight) {
 	//Apply Threshold
 	Mat gray;
-    Mat canvas(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
+        Mat canvas(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
 	cvtColor(src,gray,CV_RGB2GRAY);
-	//GaussianBlur( gray, gray, Size( 15, 15 ), 0, 0 );
 	threshold(gray,thresh,iThresh,255,THRESH_BINARY_INV);
-	//Apply HoughLines
 	HoughLinesP( thresh, lines, 1, CV_PI/180, 200, 250, 0);
 	for( size_t i = 0; i < lines.size(); i++ )
 	{
 		line(canvas, Point(lines[i][0], lines[i][1]),
 			Point(lines[i][2], lines[i][3]), Scalar(255,255,255), 8, 3 );
 	}
+	//gray.copyTo(thresh);
+	//gray.copyTo(hough);
 	canvas.copyTo(hough);
 }
 void processFrame_adaptive(InputArray src,OutputArray dst,OutputArray hough, double dWidth, double dHeight){
@@ -384,5 +394,5 @@ cv::Mat makeCanvas(std::vector<cv::Mat>& vecMat, int windowHeight, int nRows) {
                         x_end += resizeWidth[k] + edgeThickness;
                 }
         }
-        return canvasImage;
+	return canvasImage;
 }
