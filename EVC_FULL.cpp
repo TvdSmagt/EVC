@@ -45,7 +45,7 @@ void help();
 void goLeft(double degrees);
 void goForward();
 void goRight(double degrees);
-void ArduinoCommand(int comm1,int comm2);
+void ArduinoCommand(int fd, int command);
 
 void help()
 {
@@ -86,8 +86,12 @@ void processVideo(char* videoFilename) {
 	raspicam::RaspiCam_Cv Camera;
 	Camera.set( CV_CAP_PROP_FORMAT, CV_8UC3 );
 	if (!Camera.open()) {cerr<<"Error opening the camera"<<endl;exit(EXIT_FAILURE);}
-    	//Start capture
-
+    	//Setup connection
+	int fd = serialOpen ("/dev/ttyACM0",9600);
+	if (fd<0){exit(EXIT_FAILURE);}
+	serialFlush(fd);
+	//Start capture
+	
     //Get screen sizes
     dWidth = Camera.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
     dHeight = Camera.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
@@ -127,19 +131,23 @@ void processVideo(char* videoFilename) {
         int iDirPath = findPath(src_path,dst_path,false);
         int iDirSign = findSign(src_sign,dst_sign,false);
 
+	
         //Give commands
 			switch (iDirPath){
 			case TURN_LEFT :{
+				ArduinoCommand(fd,30);
 				goLeft(20);
 				//putText(src,"Go Left",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
 				break;
 			}
 			case TURN_RIGHT:{
+				ArduinoCommand(fd,60);
 				goRight(20);
 				//putText(src,"Go Right",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
 				break;
 			}
 			case DRIVE_STRAIGHT:{
+				ArduinoCommand(fd,9);
 				goForward();
 				//putText(src,"Go Straight",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
 				break;
@@ -344,8 +352,14 @@ void goRight(double degrees){
 	//Call Arduino command: TurnRight(double degrees)
 	cout << "Turn Right\n";
 }
-void ArduinoCommand(int comm1,int comm2){
-
+void ArduinoCommand(int fd, int command){
+	for(int i = 0;i<4;i++){
+	serialPutchar(fd,command);
+	}
+	for(int j = 0;j<4;j++){
+	int answer = serialGetchar(fd);
+	cout << answer << "\n";
+	}
 }
 
 cv::Mat makeCanvas(std::vector<cv::Mat>& vecMat, int windowHeight, int nRows) {

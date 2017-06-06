@@ -29,5 +29,5 @@ endif()
 add_executable(EVC_FULL EVC_FULL.cpp)
 
 # Link your application with OpenCV libraries
-target_link_libraries(EVC_FULL ${OpenCV_LIBS} ${raspicam_CV_LIBS})
+target_link_libraries(EVC_FULL ${OpenCV_LIBS} ${raspicam_CV_LIBS} wiringPi)
 
