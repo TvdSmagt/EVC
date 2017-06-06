@@ -14,6 +14,7 @@
 #include <iostream>
 #include <sstream>
 //local
+#include <wiringSerial.h>
 
 using namespace cv;
 using namespace std;
