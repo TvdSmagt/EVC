@@ -365,6 +365,10 @@ void ArduinoCommand(int fd, int command){
 	}
 }
 
+void ArduinoCommand2(int fd, int Power_M, int Steer_M, int Power_C, int Steer_C){
+	
+}
+
 cv::Mat makeCanvas(std::vector<cv::Mat>& vecMat, int windowHeight, int nRows) {
         int N = vecMat.size();
         nRows  = nRows > N ? N : nRows;
