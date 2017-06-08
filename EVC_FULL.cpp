@@ -22,7 +22,7 @@ enum DriveCommand {DRIVE_STRAIGHT=0,TURN_LEFT,TURN_RIGHT};
 enum SignDetected {SIGN_NONE=0,SIGN_LEFT,SIGN_RIGHT, SIGN_STRAIGHT, SIGN_STOP, SIGN_U_TURN, SIGN_UNKNOWN};
 cv::Mat src,dst,src_crop, dst_color, gray, thresh , hough;
 cv::Mat src_path,dst_path,src_sign,dst_sign;
-float pctCropHeight = 0.1;
+float pctCropHeight = 0.0; //0.1
 int iThresh = 60;
 int maxLines = 25;
 int curved = 1, straight = 1;
@@ -100,7 +100,7 @@ void processVideo(char* videoFilename) {
     ITER = 0;
     while( keyboard != 'q' && keyboard != 27 ){
         //read the current frame
-
+	double time_ = cv::getTickCount();
         if(! Camera.grab()){
             cerr << "Unable to read next frame." << endl;
             cerr << "Exiting..." << endl;
@@ -123,7 +123,7 @@ void processVideo(char* videoFilename) {
 	cout << dWidth << " " << dHeight;
 	imshow("Result",hough);
         int iDirPath = 0; */
-        int iDirPath = findPath(src_path,dst_path,true);
+        int iDirPath = findPath(src_path,dst_path,false);
         int iDirSign = findSign(src_sign,dst_sign,false);
 
         //Give commands
@@ -147,6 +147,8 @@ void processVideo(char* videoFilename) {
 	    	//namedWindow("Result", WINDOW_NORMAL);
 	    	//cv::resizeWindow("Result", dWidth, dHeight);
 	    	//imshow("Result",src);
+		double secondsElapsed = double (cv::getTickCount()-time_)/double(cv::getTickFrequency());
+		cout << "Time :" << secondsElapsed << " FPS: " << 1/secondsElapsed;
         }
         //Finalize
         ITER++;
@@ -221,7 +223,7 @@ int findPath(InputArray src, OutputArray dst, bool display){
 	Images.push_back(command);
 	Mat canvas = makeCanvas(Images, dHeight,2);
 	namedWindow("Canvas", WINDOW_NORMAL);
-	cv::resizeWindow("Canvas", dWidth/4, dHeight/4);
+	cv::resizeWindow("Canvas", dWidth/2, dHeight/2);
 	imshow("Canvas",canvas);
 	}
 	return direction;
