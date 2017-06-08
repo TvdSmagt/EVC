@@ -32,7 +32,9 @@ int FrameSkip = 5;
 vector<Vec4i> lines;
 double dWidth,dHeight;
 char keyboard; //input from keyboard
+bool video = true;
 
+//Functions
 cv::Mat makeCanvas(std::vector<cv::Mat>& vecMat, int windowHeight, int nRows);
 void processVideo(char* videoFilename);
 int findPath(InputArray src, OutputArray dst, bool display);
@@ -76,25 +78,26 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 void processVideo(char* videoFilename) {
-    //create the capture object
-    //VideoCapture capture(videoFilename);
-    /*if(!capture.isOpened()){
-        //error in opening the video input
-        cerr << "Unable to open video file: " << videoFilename << endl;
-        exit(EXIT_FAILURE);
-    }*/
-	raspicam::RaspiCam_Cv Camera;
-	Camera.set( CV_CAP_PROP_FORMAT, CV_8UC3 );
-	if (!Camera.open()) {cerr<<"Error opening the camera"<<endl;exit(EXIT_FAILURE);}
-    	//Setup connection
+	//Open Serial Connection With Arduino
 	int fd = serialOpen ("/dev/ttyACM0",9600);
 	if (fd<0){exit(EXIT_FAILURE);}
 	serialFlush(fd);
-	//Start capture
+
+    //create the capture object
+	if (video){
+    VideoCapture capture(videoFilename);
+    if(!capture.isOpened()){
+        //error in opening the video input
+        cerr << "Unable to open video file: " << videoFilename << endl;
+        exit(EXIT_FAILURE);
+    }} else {
+	raspicam::RaspiCam_Cv capture;
+	capture.set( CV_CAP_PROP_FORMAT, CV_8UC3 );
+	if (!capture.open()) {cerr<<"Error opening the capture"<<endl;exit(EXIT_FAILURE);}}
 	
     //Get screen sizes
-    dWidth = Camera.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
-    dHeight = Camera.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
+    dWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
+    dHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
     //Set Cropping parameters
     float yFl = float(dHeight) * pctCropHeight;
     int y = int(yFl + 0.5);
@@ -104,32 +107,32 @@ void processVideo(char* videoFilename) {
     keyboard = 0;
     ITER = 0;
     while( keyboard != 'q' && keyboard != 27 ){
-        //read the current frame
-	double time_ = cv::getTickCount();
-        if(! Camera.grab()){
-            cerr << "Unable to read next frame." << endl;
-            cerr << "Exiting..." << endl;
-            exit(EXIT_FAILURE);
-        }
-	Camera.retrieve (src);
-	/*if(!capture.read(src)) {
-            cerr << "Unable to read next frame." << endl;
-            cerr << "Exiting..." << endl;
-            exit(EXIT_FAILURE);
-        }*/
+		double time_ = cv::getTickCount();
+		if (video){
+		    //read the current frame
+		    if(! capture.grab()){
+		        cerr << "Unable to read next frame." << endl;
+		        cerr << "Exiting..." << endl;
+		        exit(EXIT_FAILURE);
+        }}else{
+			capture.retrieve (src);
+			if(!capture.read(src)) {
+				    cerr << "Unable to read next frame." << endl;
+				    cerr << "Exiting..." << endl;
+				    exit(EXIT_FAILURE);
+				}}
         //Start processing frame
-	//cout << "\n" << ITER;
         if (ITER % FrameSkip==FrameSkip/5 && !src.empty() && ITER > 20){
-	cout << "\n" << ITER << " processing image...";
-        //Crop image to remove top part which is not of interest
-        //src_crop = src(myROI);
-	src_path = src(myROI);
-	/*processFrame(src_path, thresh, hough, dWidth, dHeight); 
-	cout << dWidth << " " << dHeight;
-	imshow("Result",hough);
-        int iDirPath = 0; */
-        int iDirPath = findPath(src_path,dst_path,false);
-        int iDirSign = findSign(src_sign,dst_sign,false);
+			cout << "\n" << ITER << " processing image...";
+			//Crop image to remove top part which is not of interest
+			//src_crop = src(myROI);
+			src_path = src(myROI);
+			/*processFrame(src_path, thresh, hough, dWidth, dHeight); 
+			cout << dWidth << " " << dHeight;
+			imshow("Result",hough);
+			int iDirPath = 0; */
+			int iDirPath = findPath(src_path,dst_path,false);
+			int iDirSign = findSign(src_sign,dst_sign,false);
 
 	
         //Give commands
@@ -163,8 +166,8 @@ void processVideo(char* videoFilename) {
         ITER++;
         keyboard = (char)waitKey( 30 );
     }
-    cout<<"Stop camera..."<<endl;
-    Camera.release();
+    cout<<"Stop capture..."<<endl;
+    capture.release();
     //delete capture object
     //capture.release();
 }
