@@ -141,12 +141,12 @@ void processVideo(char* videoFilename) {
 			//Crop image to remove top part which is not of interest
 			//src_crop = src(myROI);
 			src_path = src(myROI);
-			oVideoWriter.write(src);
+			//oVideoWriter.write(src);
 			/*processFrame(src_path, thresh, hough, dWidth, dHeight); 
 			cout << dWidth << " " << dHeight;
 			imshow("Result",hough);
 			int iDirPath = 0; */
-			int iDirPath = findPath(src_path,dst_path,true);
+			int iDirPath = findPath(src_path,dst_path,false);
 			int iDirSign = findSign(src_sign,dst_sign,false);
 
 	
