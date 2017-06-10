@@ -29,6 +29,7 @@ int maxLines = 25;
 int curved = 1, straight = 1;
 int ITER;
 int FrameSkip = 5;
+const int compRatio = 2;
 vector<Vec4i> lines;
 double dWidth,dHeight;
 char keyboard; //input from keyboard
@@ -199,10 +200,10 @@ int findPath(InputArray src, OutputArray dst, bool display){
 	//Process results into a working roadmap
 	int a_c = -1, a_s = -1;
 	if (curved){
-		a_c = searchLongestLine_Angle(hough,hough,dWidth,dHeight);
+		a_c = searchLongestLine_Angle(hough,hough,dWidth/compRatio,dHeight/compRatio);
 	}
 	if (straight){
-		a_s = searchLongestLine_Straight(hough,hough,dWidth,dHeight);
+		a_s = searchLongestLine_Straight(hough,hough,dWidth/compRatio,dHeight/compRatio);
 	}
 	//Calculate direction
 	double d_c, d_s;
@@ -262,8 +263,9 @@ int findSign(InputArray src, OutputArray dst, bool display){
 void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dWidth, double dHeight) {
 	//Apply Threshold
 	//cout << "\n Start Frame Processing";
-	Mat gray,canny, cmp(dHeight/4,dWidth/4,CV_8UC3);
+	Mat gray,canny, cmp(int(dHeight/compRatio),int(dWidth/compRatio),CV_8UC3);
         Mat canvas(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
+	//Mat canvas(int(dHeight/compRatio),int(dWidth/compRatio),CV_8UC3,Scalar(0,0,0));
 	//Resize
 	resize(src,cmp,cmp.size(),0,0,0);
 	//Change color to Gray
@@ -273,7 +275,7 @@ void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dW
 	//Canny
 //	Canny(thresh,canny,100,300,3);
 	//cout << "\n Draw Houghlines";
-	HoughLinesP( thresh, lines, 1, CV_PI/180, 200, 250, 0);
+	HoughLinesP( thresh, lines, 1, CV_PI/180, 200/compRatio, 250/compRatio, 0);
 	for( size_t i = 0; i < lines.size(); i++ )
 	{
 		line(canvas, Point(lines[i][0], lines[i][1]),
