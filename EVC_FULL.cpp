@@ -23,7 +23,7 @@ enum DriveCommand {DRIVE_STRAIGHT=0,TURN_LEFT,TURN_RIGHT};
 enum SignDetected {SIGN_NONE=0,SIGN_LEFT,SIGN_RIGHT, SIGN_STRAIGHT, SIGN_STOP, SIGN_U_TURN, SIGN_UNKNOWN};
 cv::Mat src,dst,src_crop, dst_color, gray, thresh , hough;
 cv::Mat src_path,dst_path,src_sign,dst_sign;
-float pctCropHeight = 0.0; //0.1
+float pctCropHeight = 0.1; //0.1
 int iThresh = 60;
 int maxLines = 25;
 int curved = 1, straight = 1;
@@ -55,8 +55,8 @@ void help()
     << "--------------------------------------------------------------------------" << endl
     << "This program is used for the Embedded Visual Control Project for Group 7."  << endl                                                                                   				     << endl
     << "Usage:"                                                                     << endl
-    << "./bg_sub {-vid <video filename>}"                     			    << endl
-    << "for example: ./bg_sub -vid video.avi"                                       << endl
+    << "./EVC_FULL {-vid <video filename>}"                    			    << endl
+    << "for example: ./EVC_FULL ./demo_1.h264"                                      << endl
     << "--------------------------------------------------------------------------" << endl
     << endl;
 }
@@ -79,25 +79,35 @@ int main(int argc, char* argv[])
 }
 void processVideo(char* videoFilename) {
 	//Open Serial Connection With Arduino
-	int fd = serialOpen ("/dev/ttyACM0",9600);
-	if (fd<0){exit(EXIT_FAILURE);}
-	serialFlush(fd);
-
+	//int fd = serialOpen ("/dev/ttyACM0",9600);
+	//if (fd<0){exit(EXIT_FAILURE);}
+	//serialFlush(fd);
     //create the capture object
-	if (video){
-    VideoCapture capture(videoFilename);
+/*	if (video){
+*/    VideoCapture capture(videoFilename);
     if(!capture.isOpened()){
         //error in opening the video input
         cerr << "Unable to open video file: " << videoFilename << endl;
         exit(EXIT_FAILURE);
-    }} else {
+	}
+/*    } else {
 	raspicam::RaspiCam_Cv capture;
 	capture.set( CV_CAP_PROP_FORMAT, CV_8UC3 );
-	if (!capture.open()) {cerr<<"Error opening the capture"<<endl;exit(EXIT_FAILURE);}}
-	
+	if (!capture.open()) {cerr<<"Error opening the capture"<<endl;exit(EXIT_FAILURE);}
+*/	//}
+
     //Get screen sizes
     dWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
     dHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
+	Size frameSize(static_cast<int>(dWidth), static_cast<int>(dHeight));
+	//set filename
+	time_t now = time(NULL);
+	char ctime[256];
+	strftime(ctime,256,"%d_%m_%Y_%H_%M", gmtime(&now));
+	//cout << capture.get(CAP_PROP_FOURCC)<<"\n";
+	//Create Videowriter instance
+	VideoWriter oVideoWriter(string(ctime) + ".avi", CV_FOURCC('M','J','P','G'),5 ,frameSize , true);
+
     //Set Cropping parameters
     float yFl = float(dHeight) * pctCropHeight;
     int y = int(yFl + 0.5);
@@ -108,49 +118,53 @@ void processVideo(char* videoFilename) {
     ITER = 0;
     while( keyboard != 'q' && keyboard != 27 ){
 		double time_ = cv::getTickCount();
-		if (video){
+//		if (!video){
 		    //read the current frame
-		    if(! capture.grab()){
+/*		    if(! capture.grab()){
 		        cerr << "Unable to read next frame." << endl;
 		        cerr << "Exiting..." << endl;
 		        exit(EXIT_FAILURE);
-        }}else{
-			capture.retrieve (src);
-			if(!capture.read(src)) {
+			
+        	}
+		capture.retrieve (src);
+*//*		}else{
+*/			if(!capture.read(src)) {
 				    cerr << "Unable to read next frame." << endl;
 				    cerr << "Exiting..." << endl;
 				    exit(EXIT_FAILURE);
-				}}
+				}
+//	}
         //Start processing frame
         if (ITER % FrameSkip==FrameSkip/5 && !src.empty() && ITER > 20){
 			cout << "\n" << ITER << " processing image...";
 			//Crop image to remove top part which is not of interest
 			//src_crop = src(myROI);
 			src_path = src(myROI);
+			oVideoWriter.write(src);
 			/*processFrame(src_path, thresh, hough, dWidth, dHeight); 
 			cout << dWidth << " " << dHeight;
 			imshow("Result",hough);
 			int iDirPath = 0; */
-			int iDirPath = findPath(src_path,dst_path,false);
+			int iDirPath = findPath(src_path,dst_path,true);
 			int iDirSign = findSign(src_sign,dst_sign,false);
 
 	
         //Give commands
 			switch (iDirPath){
 			case TURN_LEFT :{
-				ArduinoCommand(fd,30);
+				//ArduinoCommand(fd,30);
 				goLeft(20);
 				//putText(src,"Go Left",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
 				break;
 			}
 			case TURN_RIGHT:{
-				ArduinoCommand(fd,60);
+				//ArduinoCommand(fd,60);
 				goRight(20);
 				//putText(src,"Go Right",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
 				break;
 			}
 			case DRIVE_STRAIGHT:{
-				ArduinoCommand(fd,9);
+				//ArduinoCommand(fd,9);
 				goForward();
 				//putText(src,"Go Straight",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
 				break;
@@ -247,10 +261,18 @@ int findSign(InputArray src, OutputArray dst, bool display){
 }
 void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dWidth, double dHeight) {
 	//Apply Threshold
-	Mat gray;
+	//cout << "\n Start Frame Processing";
+	Mat gray,canny, cmp(dHeight/8,dWidth/8,CV_8UC3);
         Mat canvas(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
-	cvtColor(src,gray,CV_RGB2GRAY);
+	//Resize
+	resize(src,cmp,cmp.size(),0,0,0);
+	//Change color to Gray
+	cvtColor(cmp,gray,CV_RGB2GRAY);
+	//cout << "\n Set Threshold";
 	threshold(gray,thresh,iThresh,255,THRESH_BINARY_INV);
+	//Canny
+//	Canny(thresh,canny,100,300,3);
+	//cout << "\n Draw Houghlines";
 	HoughLinesP( thresh, lines, 1, CV_PI/180, 200, 250, 0);
 	for( size_t i = 0; i < lines.size(); i++ )
 	{
