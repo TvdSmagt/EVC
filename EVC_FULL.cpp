@@ -262,7 +262,7 @@ int findSign(InputArray src, OutputArray dst, bool display){
 void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dWidth, double dHeight) {
 	//Apply Threshold
 	//cout << "\n Start Frame Processing";
-	Mat gray,canny, cmp(dHeight/8,dWidth/8,CV_8UC3);
+	Mat gray,canny, cmp(dHeight/4,dWidth/4,CV_8UC3);
         Mat canvas(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
 	//Resize
 	resize(src,cmp,cmp.size(),0,0,0);
