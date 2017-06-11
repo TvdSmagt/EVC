@@ -8,7 +8,7 @@ const int NEUTRAL = 127;
 
 //Functions
 void ArduinoCommand(int fd, int command);
-void ArduinoCommand(int fd, int Power, int Steer);
+void ArduinoCommand2(int fd, int power, int degrees);
 void goLeft(int fd, int degrees, int power);
 void goRight(int fd, int degrees, int power);
 void goForward(int fd, int power);
@@ -24,17 +24,21 @@ void ArduinoCommand(int fd, int command){
 	cout << answer << "\n";
 	}
 }
-void ArduinoCommand2(int fd, int Power, int degrees){
-	int Steer = 127;
-	if ((degrees > 127)||(degrees < -127)) {
-		Steer = 127 - 127 * Sign(degrees);
-	} else {
-		Steer -= degrees;
-	}
+void ArduinoCommand2(int fd, int power, int degrees){
+	int Steer = NEUTRAL;
+	int Force = NEUTRAL;
+	if (degrees > NEUTRAL){		Steer = 255;}
+	 else if(degrees <- NEUTRAL){	Steer = 0;}
+ 	 else {				Steer += degrees;}
+	if (power > NEUTRAL){		Force = 255;}
+	 else if(power <- NEUTRAL){	Force = 0;} 
+	 else {				Force += power;}
 	if(fd>0){
-	serialPutchar(fd,Power);
+//Send Force and Steer values
+	serialPutchar(fd,Force);
 	serialPutchar(fd,Steer);
-	serialPutchar(fd,Power);
+//Control bytes -> Can maybe be used for other data later...
+	serialPutchar(fd,Force);
 	serialPutchar(fd,Steer);
 	}
 	for (int r = 0; r<4;r++){
