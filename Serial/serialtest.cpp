@@ -6,7 +6,8 @@ using namespace std;
 int main ()
 {
 	cout << "Starting...\n";
-	int fd = serialOpen ("/dev/ttyACM0",9600);
+	//int fd = serialOpen ("/dev/ttyACM0",9600);
+	int fd = serialOpen ("/dev/ttyUSB0",9600);
 	if (fd < 0){
 	    return -1;
 	}

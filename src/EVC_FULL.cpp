@@ -31,7 +31,7 @@ char keyboard; //input from keyboard
 const int INPUT_VIDEO = 1;
 const int SAVE_VIDEO = 1;
 const int DISPLAY_VIDEO = 0;
-const int ARDUINO_CONNECT = 0;
+const int ARDUINO_CONNECT = 1;
 VideoWriter oVideoWriter;
 int fd;
 
@@ -71,8 +71,9 @@ int main(int argc, char* argv[])
 void processVideo(char* videoFilename) {
 	//Open Serial Connection With Arduino
    if(ARDUINO_CONNECT){
-	int fd = serialOpen ("/dev/ttyACM0",9600);
-	if (fd<0){cerr << "Unable to open SSH connection to ARDUINO"; exit(EXIT_FAILURE);}
+	int fd = serialOpen ("/dev/ttyUSB0",9600);
+//	int fd = serialOpen ("/dev/ttyACM0",9600);
+	if (fd<0){cerr << "Unable to open SSH connection to ARDUINO\n"; exit(EXIT_FAILURE);}
 	serialFlush(fd);}
     //create the capture object
 //	if (video){
@@ -136,21 +137,17 @@ void processVideo(char* videoFilename) {
 			int iDirPath = findPath(src_path,dst_path,DISPLAY_VIDEO, dWidth, dHeight);
 			int iDirSign = findSign(src_sign,dst_sign,DISPLAY_VIDEO, dWidth, dHeight);
 
-	
         //Give commands
 			switch (iDirPath){
 			case TURN_LEFT :{
-				//ArduinoCommand(fd,30);
-				if(ARDUINO_CONNECT){goLeft(fd,20,10);}
+				if(ARDUINO_CONNECT){goLeft(fd,5,10);}
 				break;
 			}
 			case TURN_RIGHT:{
-				//ArduinoCommand(fd,60);
-				if(ARDUINO_CONNECT){goRight(fd,20,10);}
+				if(ARDUINO_CONNECT){goRight(fd,5,10);}
 				break;
 			}
 			case DRIVE_STRAIGHT:{
-				//ArduinoCommand(fd,9);
 				if(ARDUINO_CONNECT){goForward(fd,10);}
 				break;
 			}
