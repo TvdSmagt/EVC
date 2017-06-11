@@ -123,32 +123,32 @@ EVC_FULL/fast:
 	$(MAKE) -f CMakeFiles/EVC_FULL.dir/build.make CMakeFiles/EVC_FULL.dir/build
 .PHONY : EVC_FULL/fast
 
-EVC_FULL.o: EVC_FULL.cpp.o
+src/EVC_FULL.o: src/EVC_FULL.cpp.o
 
-.PHONY : EVC_FULL.o
+.PHONY : src/EVC_FULL.o
 
 # target to build an object file
-EVC_FULL.cpp.o:
-	$(MAKE) -f CMakeFiles/EVC_FULL.dir/build.make CMakeFiles/EVC_FULL.dir/EVC_FULL.cpp.o
-.PHONY : EVC_FULL.cpp.o
+src/EVC_FULL.cpp.o:
+	$(MAKE) -f CMakeFiles/EVC_FULL.dir/build.make CMakeFiles/EVC_FULL.dir/src/EVC_FULL.cpp.o
+.PHONY : src/EVC_FULL.cpp.o
 
-EVC_FULL.i: EVC_FULL.cpp.i
+src/EVC_FULL.i: src/EVC_FULL.cpp.i
 
-.PHONY : EVC_FULL.i
+.PHONY : src/EVC_FULL.i
 
 # target to preprocess a source file
-EVC_FULL.cpp.i:
-	$(MAKE) -f CMakeFiles/EVC_FULL.dir/build.make CMakeFiles/EVC_FULL.dir/EVC_FULL.cpp.i
-.PHONY : EVC_FULL.cpp.i
+src/EVC_FULL.cpp.i:
+	$(MAKE) -f CMakeFiles/EVC_FULL.dir/build.make CMakeFiles/EVC_FULL.dir/src/EVC_FULL.cpp.i
+.PHONY : src/EVC_FULL.cpp.i
 
-EVC_FULL.s: EVC_FULL.cpp.s
+src/EVC_FULL.s: src/EVC_FULL.cpp.s
 
-.PHONY : EVC_FULL.s
+.PHONY : src/EVC_FULL.s
 
 # target to generate assembly for a file
-EVC_FULL.cpp.s:
-	$(MAKE) -f CMakeFiles/EVC_FULL.dir/build.make CMakeFiles/EVC_FULL.dir/EVC_FULL.cpp.s
-.PHONY : EVC_FULL.cpp.s
+src/EVC_FULL.cpp.s:
+	$(MAKE) -f CMakeFiles/EVC_FULL.dir/build.make CMakeFiles/EVC_FULL.dir/src/EVC_FULL.cpp.s
+.PHONY : src/EVC_FULL.cpp.s
 
 # Help Target
 help:
@@ -159,9 +159,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... EVC_FULL"
-	@echo "... EVC_FULL.o"
-	@echo "... EVC_FULL.i"
-	@echo "... EVC_FULL.s"
+	@echo "... src/EVC_FULL.o"
+	@echo "... src/EVC_FULL.i"
+	@echo "... src/EVC_FULL.s"
 .PHONY : help
 
 

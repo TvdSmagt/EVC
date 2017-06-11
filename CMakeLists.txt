@@ -26,7 +26,7 @@ if(CMAKE_VERSION VERSION_LESS "2.8.11")
 endif()
 
 # Declare the executable target built from your sources
-add_executable(EVC_FULL EVC_FULL.cpp)
+add_executable(EVC_FULL src/EVC_FULL.cpp)
 
 # Link your application with OpenCV libraries
 target_link_libraries(EVC_FULL ${OpenCV_LIBS} ${raspicam_CV_LIBS} wiringPi)
