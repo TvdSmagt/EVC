@@ -16,6 +16,7 @@
 //local
 #include <wiringSerial.h>
 #include "makeCanvas.cpp"
+#include "arduinoCommand.cpp"
 
 using namespace cv;
 using namespace std;
@@ -45,10 +46,6 @@ void processFrame_adaptive(InputArray src,OutputArray dst,OutputArray hough, dou
 int searchLongestLine_Angle(InputArray src,OutputArray dst, double dWidth, double dHeight);
 int searchLongestLine_Straight(InputArray src,OutputArray dst, double dWidth, double dHeight);
 void help();
-void goLeft(double degrees);
-void goForward();
-void goRight(double degrees);
-void ArduinoCommand(int fd, int command);
 
 void help()
 {
@@ -84,8 +81,8 @@ void processVideo(char* videoFilename) {
 	//if (fd<0){exit(EXIT_FAILURE);}
 	//serialFlush(fd);
     //create the capture object
-/*	if (video){
-*/    VideoCapture capture(videoFilename);
+//	if (video){
+    VideoCapture capture(videoFilename);
     if(!capture.isOpened()){
         //error in opening the video input
         cerr << "Unable to open video file: " << videoFilename << endl;
@@ -139,13 +136,8 @@ void processVideo(char* videoFilename) {
         if (ITER % FrameSkip==FrameSkip/5 && !src.empty() && ITER > 20){
 			cout << "\n" << ITER << " processing image...";
 			//Crop image to remove top part which is not of interest
-			//src_crop = src(myROI);
 			src_path = src(myROI);
 			//oVideoWriter.write(src);
-			/*processFrame(src_path, thresh, hough, dWidth, dHeight); 
-			cout << dWidth << " " << dHeight;
-			imshow("Result",hough);
-			int iDirPath = 0; */
 			int iDirPath = findPath(src_path,dst_path,false);
 			int iDirSign = findSign(src_sign,dst_sign,false);
 
@@ -154,26 +146,20 @@ void processVideo(char* videoFilename) {
 			switch (iDirPath){
 			case TURN_LEFT :{
 				//ArduinoCommand(fd,30);
-				goLeft(20);
-				//putText(src,"Go Left",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
+				//goLeft(20);
 				break;
 			}
 			case TURN_RIGHT:{
 				//ArduinoCommand(fd,60);
-				goRight(20);
-				//putText(src,"Go Right",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
+				//goRight(20);
 				break;
 			}
 			case DRIVE_STRAIGHT:{
 				//ArduinoCommand(fd,9);
-				goForward();
-				//putText(src,"Go Straight",Point2f(0,dHeight*0.5), FONT_HERSHEY_PLAIN, 20,  Scalar(255,255,255));
+				//goForward();
 				break;
 			}
 			}
-	    	//namedWindow("Result", WINDOW_NORMAL);
-	    	//cv::resizeWindow("Result", dWidth, dHeight);
-	    	//imshow("Result",src);
 		double secondsElapsed = double (cv::getTickCount()-time_)/double(cv::getTickFrequency());
 		cout << "Time :" << secondsElapsed << " FPS: " << 1/secondsElapsed;
         }
@@ -182,29 +168,19 @@ void processVideo(char* videoFilename) {
         keyboard = (char)waitKey( 30 );
     }
     cout<<"Stop capture..."<<endl;
-    capture.release();
     //delete capture object
-    //capture.release();
+    capture.release();
 }
 
 int findPath(InputArray src, OutputArray dst, bool display){
 	vector<Mat> Images;
-
-	//Histogram normalization.equalization?
-	//Background subtraction?
-	//Gaussian blur?
-
 	processFrame(src,thresh,hough,dWidth,dHeight);
 	//processFrame_adaptive(src_crop,thresh,hough,dWidth,dHeight);
 
 	//Process results into a working roadmap
 	int a_c = -1, a_s = -1;
-	if (curved){
-		a_c = searchLongestLine_Angle(hough,hough,dWidth/compRatio,dHeight/compRatio);
-	}
-	if (straight){
-		a_s = searchLongestLine_Straight(hough,hough,dWidth/compRatio,dHeight/compRatio);
-	}
+	if (curved){a_c = searchLongestLine_Angle(hough,hough,dWidth/compRatio,dHeight/compRatio);}
+	if (straight){a_s = searchLongestLine_Straight(hough,hough,dWidth/compRatio,dHeight/compRatio);}
 	//Calculate direction
 	double d_c, d_s;
 	d_c = a_c - maxLines/2;
@@ -213,30 +189,21 @@ int findPath(InputArray src, OutputArray dst, bool display){
 	Mat command(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
 	int direction = 0;
 	if (curved && straight){
-		if(abs(d_s)<maxLines/8){
-			direction = DRIVE_STRAIGHT;
-		}else if(d_c>-maxLines/8){
-			direction = TURN_LEFT;
-		}else if(d_c<maxLines/8){
-			direction = TURN_RIGHT;
+		if(	  abs(d_s)<maxLines/8){	direction = DRIVE_STRAIGHT;
+		}else if( d_c>-maxLines/8){	direction = TURN_LEFT;
+		}else if( d_c<maxLines/8){	direction = TURN_RIGHT;
 		}
 	}
 	else if (curved){
-		if(d_c>-maxLines/8){
-			direction = TURN_LEFT;
-		}else if(d_c<maxLines/8){
-			direction = TURN_RIGHT;
-		}else{
-			direction = DRIVE_STRAIGHT;
+		if(	  d_c>-maxLines/8){	direction = TURN_LEFT;
+		}else if( d_c<maxLines/8){	direction = TURN_RIGHT;
+		}else{				direction = DRIVE_STRAIGHT;
 		}
 	}
 	else if (straight){
-		if(d_s<-maxLines/8){
-			direction = TURN_LEFT;
-		}else if(d_s>maxLines/8){
-			direction = TURN_RIGHT;
-		}else{
-			direction = DRIVE_STRAIGHT;
+		if(	   d_s<-maxLines/8){	direction = TURN_LEFT;
+		}else if(  d_s>maxLines/8){	direction = TURN_RIGHT;
+		}else{	   			direction = DRIVE_STRAIGHT;
 		}
 	}
 	hough.copyTo(dst);
@@ -257,15 +224,12 @@ int findPath(InputArray src, OutputArray dst, bool display){
 }
 
 int findSign(InputArray src, OutputArray dst, bool display){
-
 	return 0;
 }
 void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dWidth, double dHeight) {
 	//Apply Threshold
-	//cout << "\n Start Frame Processing";
 	Mat gray,canny, cmp(int(dHeight/compRatio),int(dWidth/compRatio),CV_8UC3);
         Mat canvas(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
-	//Mat canvas(int(dHeight/compRatio),int(dWidth/compRatio),CV_8UC3,Scalar(0,0,0));
 	//Resize
 	resize(src,cmp,cmp.size(),0,0,0);
 	//Change color to Gray
@@ -281,8 +245,6 @@ void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dW
 		line(canvas, Point(lines[i][0], lines[i][1]),
 			Point(lines[i][2], lines[i][3]), Scalar(255,255,255), 8, 3 );
 	}
-	//gray.copyTo(thresh);
-	//gray.copyTo(hough);
 	canvas.copyTo(hough);
 }
 void processFrame_adaptive(InputArray src,OutputArray dst,OutputArray hough, double dWidth, double dHeight){
@@ -367,30 +329,7 @@ int searchLongestLine_Angle(InputArray src,OutputArray dst, double dWidth, doubl
 	return angle;
 }
 
-void goLeft(double degrees){
-	//Call Arduino command: TurnLeft(double degrees)
-	cout << "Turn Left\n";
-}
-void goForward(){
-	//Call Arduino command: GoStraight(double cm)
-	cout << "Go Forward\n";
-}
-void goRight(double degrees){
-	//Call Arduino command: TurnRight(double degrees)
-	cout << "Turn Right\n";
-}
-void ArduinoCommand(int fd, int command){
-	for(int i = 0;i<4;i++){
-	serialPutchar(fd,command);
-	}
-	for(int j = 0;j<4;j++){
-	int answer = serialGetchar(fd);
-	cout << answer << "\n";
-	}
-}
 
-void ArduinoCommand2(int fd, int Power_M, int Steer_M, int Power_C, int Steer_C){
-	
-}
+
 
 
