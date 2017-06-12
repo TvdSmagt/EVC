@@ -1,21 +1,32 @@
+#include <wiringSerial.h>
 
-using namespace cv;
+
+//using namespace cv;
 using namespace std;
 
 //Variables
-int ardAnswer[4];
 const int NEUTRAL = 100;
+int fd;
 
 //Functions
-void ArduinoCommand(int fd, int command);
-void ArduinoCommand2(int fd, int power, int degrees);
-void goLeft(int fd, int degrees, int power);
-void goRight(int fd, int degrees, int power);
-void goForward(int fd, int power);
-void goBackward(int fd, int power);
-void Stop(int fd);
+bool ArduinoOpen();
+void ArduinoCommand(int command);
+void ArduinoCommand2(int power, int degrees);
+void goLeft(int degrees, int power);
+void goRight(int degrees, int power);
+void goForward(int power);
+void goBackward(int power);
+void carStop();
 
-void ArduinoCommand(int fd, int command){
+bool ArduinoOpen(){
+	int fd = serialOpen ("/dev/ttyUSB0",9600);
+	if (fd<0){int fd = serialOpen ("/dev/ttyUSB1",9600);}
+	if (fd<0){int fd = serialOpen ("/dev/ttyACM0",9600);}
+	if (fd<0){cerr << "Unable to open SSH connection to ARDUINO\n"; return false;}
+	serialFlush(fd);
+}
+
+void ArduinoCommand(int command){
 	for(int i = 0;i<4;i++){
 	serialPutchar(fd,command);
 	}
@@ -24,7 +35,7 @@ void ArduinoCommand(int fd, int command){
 	cout << answer << "\n";
 	}
 }
-void ArduinoCommand2(int fd, int power, int degrees){
+void ArduinoCommand2(int power, int degrees){
 	int Steer = NEUTRAL;
 	int Force = NEUTRAL;
 	if (degrees > NEUTRAL){		Steer = 2*NEUTRAL;}
@@ -40,32 +51,24 @@ void ArduinoCommand2(int fd, int power, int degrees){
 //Control bytes -> Can maybe be used for other data later...
 	serialPutchar(fd,int(Force));
 	serialPutchar(fd,int(Steer));
-//	cout << "Answer:\n";
-/*	for (int r = 0; r<4;r++){
-	int answer = serialGetchar(fd);
-	cout << answer << "\n";
-//	ardAnswer[r] = serialGetchar(fd);
-//	cout << ardAnswer[r];
-	}		
-*///	cout << "\nEnd Transmission\n";
 }
-void goLeft(int fd, int degrees, int power){
+void goLeft(int degrees, int power){
 	cout << "Turn Left\n";
-	ArduinoCommand2(fd,-degrees,power);
+	ArduinoCommand2(-degrees,power);
 }
-void goRight(int fd, int degrees, int power){
+void goRight(int degrees, int power){
 	cout << "Turn Right\n";
-	ArduinoCommand2(fd,degrees,power);
+	ArduinoCommand2(degrees,power);
 }
-void goForward(int fd, int power){
+void goForward(int power){
 	cout << "Go Forward\n";
-	ArduinoCommand2(fd,0,power);
+	ArduinoCommand2(0,power);
 }
-void goBackward(int fd, int power){
+void goBackward(int power){
 	cout << "Go Backward\n";
-	ArduinoCommand2(fd,0,-power);
+	ArduinoCommand2(0,-power);
 }
-void Stop(int fd){
+void carStop(){
 	cout << "Stop!\n";
-	ArduinoCommand2(fd,0,0);
+	ArduinoCommand2(0,0);
 }

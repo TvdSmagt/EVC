@@ -5,16 +5,14 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/video.hpp>
 #include <opencv2/objdetect.hpp>
-#include <iostream>
-#include <vector>
 #include <raspicam/raspicam_cv.h>
 //C
 #include <stdio.h>
 //C++
 #include <iostream>
+#include <vector>
 #include <sstream>
 //local
-#include <wiringSerial.h>
 #include "makeCanvas.cpp"
 #include "arduinoCommand.cpp"
 #include "findPath.cpp"
@@ -24,16 +22,15 @@ using namespace cv;
 using namespace std;
 
 // Global variables
-int ITER;
+int ITER = 0;
 int FrameSkip = 5;
 double dWidth,dHeight;
-char keyboard; //input from keyboard
-const int INPUT_VIDEO = 1;
-const int SAVE_VIDEO = 1;
-const int DISPLAY_VIDEO = 0;
-const int ARDUINO_CONNECT = 1;
+char keyboard = 0 ; //input from keyboard
+const int INPUT_VIDEO = 1; //1=VIDEO, 0=CAMERA
+const int SAVE_VIDEO = 1; //1=SAVE,0=DONT SAVE
+const int DISPLAY_VIDEO = 0; //1=DISPLAY,0=NO_DISPLAY
+const int ARDUINO_CONNECT = 1; //1=CONNECT, 0=DONT_CONNECT
 VideoWriter oVideoWriter;
-int fd;
 
 //Functions
 void help();
@@ -69,12 +66,11 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 void processVideo(char* videoFilename) {
-	//Open Serial Connection With Arduino
-   if(ARDUINO_CONNECT){
-	int fd = serialOpen ("/dev/ttyUSB0",9600);
-//	int fd = serialOpen ("/dev/ttyACM0",9600);
-	if (fd<0){cerr << "Unable to open SSH connection to ARDUINO\n"; exit(EXIT_FAILURE);}
-	serialFlush(fd);}
+    //Open Serial Connection With Arduino
+    if(ARDUINO_CONNECT){
+	if(!ArduinoOpen()){
+	    exit(EXIT_FAILURE);}}
+
     //create the capture object
 //	if (video){
     VideoCapture capture(videoFilename);
@@ -108,8 +104,6 @@ void processVideo(char* videoFilename) {
     Mat src, src_path, src_sign, dst_path, dst_sign;
 
     //read input data. ESC or 'q' for quitting
-    keyboard = 0;
-    ITER = 0;
     while( keyboard != 'q' && keyboard != 27 ){
 		double time_ = cv::getTickCount();
 //		if (!video){
@@ -140,15 +134,15 @@ void processVideo(char* videoFilename) {
         //Give commands
 			switch (iDirPath){
 			case TURN_LEFT :{
-				if(ARDUINO_CONNECT){goLeft(fd,5,10);}
+				if(ARDUINO_CONNECT){goLeft(5,10);}
 				break;
 			}
 			case TURN_RIGHT:{
-				if(ARDUINO_CONNECT){goRight(fd,5,10);}
+				if(ARDUINO_CONNECT){goRight(5,10);}
 				break;
 			}
 			case DRIVE_STRAIGHT:{
-				if(ARDUINO_CONNECT){goForward(fd,10);}
+				if(ARDUINO_CONNECT){goForward(10);}
 				break;
 			}
 			}
@@ -163,10 +157,3 @@ void processVideo(char* videoFilename) {
     //delete capture object
     capture.release();
 }
-
-
-
-
-
-
-

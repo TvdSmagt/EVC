@@ -2,10 +2,31 @@
 #include <iostream>
 #include <wiringSerial.h>
 
+#include "/home/pi/EVC/src/arduinoCommand.cpp"
+
 using namespace std;
+
+
+string command;
+
 int main ()
 {
-	cout << "Starting...\n";
+	if(!ArduinoOpen()){
+	    return -1;}
+
+	while(1){
+		cin >> command;
+		if ((command == "s") || (command == "stop")){
+			carStop();
+		} else if((command == "l") || (command == "left")){
+			goLeft(10,10);
+		} else if((command == "r") || (command == "right")){
+			goRight(10,10);
+		} else if((command == "f") || (command == "forward")){
+			goForward(10);
+		}
+	}
+	/*cout << "Starting...\n";
 	//int fd = serialOpen ("/dev/ttyACM0",9600);
 	int fd = serialOpen ("/dev/ttyUSB0",9600);
 	if (fd < 0){
@@ -24,6 +45,6 @@ int main ()
 	        int answer = serialGetchar(fd);
 	        cout << answer << "\n";
 	    }
-	}
+	}*/
 return 0;
 }
