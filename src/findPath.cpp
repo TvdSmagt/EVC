@@ -35,7 +35,7 @@ int findPath(InputArray src, OutputArray dst, bool display, double dWidth, doubl
 	Mat command(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
 	int direction = 0;
 	if (curved && straight){
-		if(	  abs(d_s)<maxLines/8){	direction = DRIVE_STRAIGHT;
+		if(	  abs(d_s-maxLines/8)<maxLines/8){	direction = DRIVE_STRAIGHT;
 		}else if( d_c>-maxLines/8){	direction = TURN_LEFT;
 		}else if( d_c<maxLines/8){	direction = TURN_RIGHT;
 		}
@@ -126,7 +126,7 @@ int searchLongestLine_Straight(InputArray src,OutputArray dst, double dWidth, do
 	}
 	int x_max, r = 0;
 		for (uint64 i = 0;i<max_range.size();i++){
-			if ((r < max_range[i]) || ((r <= max_range[i])&&(abs(max_angle[i]-maxLines/2) < abs(x_max-maxLines/2)))){
+			if ((r < max_range[i]) || ((r <= max_range[i])&&(abs(max_angle[i]-maxLines/2+maxLines/8) < abs(x_max-maxLines/2+maxLines/8)))){
 				x_max = max_angle[i];
 				r = max_range[i];
 			}

@@ -26,8 +26,8 @@ int ITER = 0;
 int FrameSkip = 1;
 double dWidth,dHeight;
 char keyboard = 0 ; //input from keyboard
-const int INPUT_VIDEO = 1; //1=VIDEO, 0=CAMERA
-const int SAVE_VIDEO = 0; //1=SAVE,0=DONT SAVE
+const int INPUT_VIDEO = 0; //1=VIDEO, 0=CAMERA
+const int SAVE_VIDEO = 1; //1=SAVE,0=DONT SAVE
 const int DISPLAY_VIDEO = 1; //1=DISPLAY,0=NO_DISPLAY
 const int ARDUINO_CONNECT = 1; //1=CONNECT, 0=DONT_CONNECT
 VideoWriter oVideoWriter;
