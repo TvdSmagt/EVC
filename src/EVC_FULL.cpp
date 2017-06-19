@@ -26,7 +26,7 @@ int ITER = 0;
 int FrameSkip = 5;
 double dWidth,dHeight;
 char keyboard = 0 ; //input from keyboard
-const int INPUT_VIDEO = 1; //1=VIDEO, 0=CAMERA
+const int INPUT_VIDEO = 0; //1=VIDEO, 0=CAMERA
 const int SAVE_VIDEO = 1; //1=SAVE,0=DONT SAVE
 const int DISPLAY_VIDEO = 0; //1=DISPLAY,0=NO_DISPLAY
 const int ARDUINO_CONNECT = 1; //1=CONNECT, 0=DONT_CONNECT
@@ -73,17 +73,17 @@ void processVideo(char* videoFilename) {
 
     //create the capture object
 //	if (video){
-    VideoCapture capture(videoFilename);
+/*    VideoCapture capture(videoFilename);
     if(!capture.isOpened()){
         //error in opening the video input
         cerr << "Unable to open video file: " << videoFilename << endl;
         exit(EXIT_FAILURE);
 	}
-/*    } else {
-	raspicam::RaspiCam_Cv capture;
+    } else {
+*/	raspicam::RaspiCam_Cv capture;
 	capture.set( CV_CAP_PROP_FORMAT, CV_8UC3 );
 	if (!capture.open()) {cerr<<"Error opening the capture"<<endl;exit(EXIT_FAILURE);}
-*/	//}
+/**/	//}
 
     //Get screen sizes
     dWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
@@ -108,20 +108,20 @@ void processVideo(char* videoFilename) {
 		double time_ = cv::getTickCount();
 //		if (!video){
 		    //read the current frame
-/*		    if(! capture.grab()){
+		    if(! capture.grab()){
 		        cerr << "Unable to read next frame." << endl;
 		        cerr << "Exiting..." << endl;
 		        exit(EXIT_FAILURE);
 			
         	}
 		capture.retrieve (src);
-*//*		}else{
-*/			if(!capture.read(src)) {
+/*		}else{
+			if(!capture.read(src)) {
 				    cerr << "Unable to read next frame." << endl;
 				    cerr << "Exiting..." << endl;
 				    exit(EXIT_FAILURE);
 				}
-//	}
+*///		}
         //Start processing frame
         if (ITER % FrameSkip==FrameSkip/5 && !src.empty() && ITER > 20){
 			cout << "\n" << ITER << " processing image...";
