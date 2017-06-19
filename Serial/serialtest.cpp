@@ -12,7 +12,7 @@ string command;
 int main ()
 {
 	if(!ArduinoOpen()){
-	    return -1;}
+	    cout<<"Error connecting to the Arduino"; return -1;}
 
 	while(1){
 		cin >> command;

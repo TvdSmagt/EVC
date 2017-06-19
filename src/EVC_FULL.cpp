@@ -31,6 +31,9 @@ const int SAVE_VIDEO = 1; //1=SAVE,0=DONT SAVE
 const int DISPLAY_VIDEO = 0; //1=DISPLAY,0=NO_DISPLAY
 const int ARDUINO_CONNECT = 1; //1=CONNECT, 0=DONT_CONNECT
 VideoWriter oVideoWriter;
+VideoCapture vCapture;
+//raspicam::RaspiCam_Cv cCapture;
+
 
 //Functions
 void help();
@@ -68,26 +71,22 @@ int main(int argc, char* argv[])
 void processVideo(char* videoFilename) {
     //Open Serial Connection With Arduino
     if(ARDUINO_CONNECT){
-	if(!ArduinoOpen()){
+	if(!ArduinoOpen()){cout<<"Cant connect to Arduino";
 	    exit(EXIT_FAILURE);}}
-
-    //create the capture object
-//	if (video){
-/*    VideoCapture capture(videoFilename);
-    if(!capture.isOpened()){
-        //error in opening the video input
-        cerr << "Unable to open video file: " << videoFilename << endl;
-        exit(EXIT_FAILURE);
-	}
-    } else {
-*/	raspicam::RaspiCam_Cv capture;
-	capture.set( CV_CAP_PROP_FORMAT, CV_8UC3 );
-	if (!capture.open()) {cerr<<"Error opening the capture"<<endl;exit(EXIT_FAILURE);}
-/**/	//}
-
-    //Get screen sizes
-    dWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
-    dHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
+	raspicam::RaspiCam_Cv cCapture;
+	if (INPUT_VIDEO){
+		vCapture = VideoCapture(videoFilename);
+		if(!vCapture.isOpened()){cerr <<"Unable to open the video file"<<endl; exit(EXIT_FAILURE);}
+	 	//Get screen sizes
+    		dWidth = vCapture.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
+    		dHeight = vCapture.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
+	}else{
+		cCapture.set( CV_CAP_PROP_FORMAT, CV_8UC3 );
+		if (!cCapture.open()) {cerr<<"Error opening the capture"<<endl;exit(EXIT_FAILURE);}
+		 //Get screen sizes
+		dWidth = cCapture.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
+		dHeight = cCapture.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
+}
 	Size frameSize(static_cast<int>(dWidth), static_cast<int>(dHeight));
 	//set filename
 	time_t now = time(NULL);
@@ -106,23 +105,13 @@ void processVideo(char* videoFilename) {
     //read input data. ESC or 'q' for quitting
     while( keyboard != 'q' && keyboard != 27 ){
 		double time_ = cv::getTickCount();
-//		if (!video){
-		    //read the current frame
-		    if(! capture.grab()){
-		        cerr << "Unable to read next frame." << endl;
-		        cerr << "Exiting..." << endl;
-		        exit(EXIT_FAILURE);
-			
-        	}
-		capture.retrieve (src);
-/*		}else{
-			if(!capture.read(src)) {
-				    cerr << "Unable to read next frame." << endl;
-				    cerr << "Exiting..." << endl;
-				    exit(EXIT_FAILURE);
-				}
-*///		}
-        //Start processing frame
+		if (!INPUT_VIDEO){
+			if(!cCapture.grab()){cerr<<"Unable to read the next frame."<<endl;exit(EXIT_FAILURE);}
+			cCapture.retrieve(src);
+		}else{
+			if(!vCapture.read(src)){cerr<<"Unable to read camera frame."<<endl;exit(EXIT_FAILURE);}
+		}
+       //Start processing frame
         if (ITER % FrameSkip==FrameSkip/5 && !src.empty() && ITER > 20){
 			cout << "\n" << ITER << " processing image...";
 			//Crop image to remove top part which is not of interest
@@ -155,5 +144,9 @@ void processVideo(char* videoFilename) {
     }
     cout<<"Stop capture..."<<endl;
     //delete capture object
-    capture.release();
+    if(INPUT_VIDEO){
+	vCapture.release();
+    }else{
+	cCapture.release();
+    }
 }
