@@ -3,8 +3,8 @@ using namespace std;
 
 //Variables
 enum DriveCommand {DRIVE_STRAIGHT=0,TURN_LEFT,TURN_RIGHT};
-float pctCropHeight = 0.1; //0.1
-int iThresh = 60;
+float pctCropHeight = 0.5; //0.1 - Previous: 0.1
+int iThresh = 90; //outside: 60
 int maxLines = 25;
 int curved = 1, straight = 1;
 const int compRatio = 2;

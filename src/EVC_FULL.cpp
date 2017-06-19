@@ -23,12 +23,12 @@ using namespace std;
 
 // Global variables
 int ITER = 0;
-int FrameSkip = 5;
+int FrameSkip = 1;
 double dWidth,dHeight;
 char keyboard = 0 ; //input from keyboard
 const int INPUT_VIDEO = 1; //1=VIDEO, 0=CAMERA
-const int SAVE_VIDEO = 1; //1=SAVE,0=DONT SAVE
-const int DISPLAY_VIDEO = 0; //1=DISPLAY,0=NO_DISPLAY
+const int SAVE_VIDEO = 0; //1=SAVE,0=DONT SAVE
+const int DISPLAY_VIDEO = 1; //1=DISPLAY,0=NO_DISPLAY
 const int ARDUINO_CONNECT = 1; //1=CONNECT, 0=DONT_CONNECT
 VideoWriter oVideoWriter;
 VideoCapture vCapture;
@@ -94,7 +94,7 @@ void processVideo(char* videoFilename) {
 	strftime(ctime,256,"%d_%m_%Y_%H_%M", gmtime(&now));
 	//cout << capture.get(CAP_PROP_FOURCC)<<"\n";
 	//Create Videowriter instance
-	if(SAVE_VIDEO){oVideoWriter = VideoWriter("video/" + string(ctime) + ".avi", CV_FOURCC('M','J','P','G'),5 ,frameSize , true);}
+	if(SAVE_VIDEO){oVideoWriter = VideoWriter("videos/" + string(ctime) + ".avi", CV_FOURCC('M','J','P','G'),5 ,frameSize , true);cout<<"Opening VideoWriter\n";}
 
     //Set Cropping parameters
     float yFl = float(dHeight) * pctCropHeight;
@@ -112,11 +112,11 @@ void processVideo(char* videoFilename) {
 			if(!vCapture.read(src)){cerr<<"Unable to read camera frame."<<endl;exit(EXIT_FAILURE);}
 		}
        //Start processing frame
-        if (ITER % FrameSkip==FrameSkip/5 && !src.empty() && ITER > 20){
+        if (ITER % FrameSkip==FrameSkip/5 && !src.empty() && ITER > 0){
 			cout << "\n" << ITER << "\n Processing image... : ";
 			//Crop image to remove top part which is not of interest
 			src_path = src(myROI);
-			if(SAVE_VIDEO){oVideoWriter.write(src);}
+			if(SAVE_VIDEO){oVideoWriter.write(src);cout<<"Saving Frame.\n";}
 			int iDirPath = findPath(src_path,dst_path,DISPLAY_VIDEO, dWidth, dHeight);
 			int iDirSign = findSign(src_sign,dst_sign,DISPLAY_VIDEO, dWidth, dHeight);
 
