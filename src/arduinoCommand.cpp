@@ -55,19 +55,19 @@ void ArduinoCommand2(int power, int degrees){
 }
 void goLeft(int degrees, int power){
 	cout << "Turn Left\n";
-	ArduinoCommand2(-degrees,power);
+	ArduinoCommand2(power,-degrees);
 }
 void goRight(int degrees, int power){
 	cout << "Turn Right\n";
-	ArduinoCommand2(degrees,power);
+	ArduinoCommand2(power,degrees);
 }
 void goForward(int power){
 	cout << "Go Forward\n";
-	ArduinoCommand2(0,power);
+	ArduinoCommand2(power,0);
 }
 void goBackward(int power){
 	cout << "Go Backward\n";
-	ArduinoCommand2(0,-power);
+	ArduinoCommand2(-power,0);
 }
 void carStop(){
 	cout << "Stop!\n";

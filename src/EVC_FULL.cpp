@@ -26,7 +26,7 @@ int ITER = 0;
 int FrameSkip = 5;
 double dWidth,dHeight;
 char keyboard = 0 ; //input from keyboard
-const int INPUT_VIDEO = 0; //1=VIDEO, 0=CAMERA
+const int INPUT_VIDEO = 1; //1=VIDEO, 0=CAMERA
 const int SAVE_VIDEO = 1; //1=SAVE,0=DONT SAVE
 const int DISPLAY_VIDEO = 0; //1=DISPLAY,0=NO_DISPLAY
 const int ARDUINO_CONNECT = 1; //1=CONNECT, 0=DONT_CONNECT
@@ -113,7 +113,7 @@ void processVideo(char* videoFilename) {
 		}
        //Start processing frame
         if (ITER % FrameSkip==FrameSkip/5 && !src.empty() && ITER > 20){
-			cout << "\n" << ITER << " processing image...";
+			cout << "\n" << ITER << "\n Processing image... : ";
 			//Crop image to remove top part which is not of interest
 			src_path = src(myROI);
 			if(SAVE_VIDEO){oVideoWriter.write(src);}
