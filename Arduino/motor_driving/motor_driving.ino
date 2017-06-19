@@ -1,17 +1,17 @@
 #define motorENA 6
 #define motorENB 11  //enables both engines
 
-// motor one (right)
-#define MotorRightPWMIn1 10
-#define MotorRightPWMIn2 9
-#define encoderRightPinA 3
-#define encoderRightPinB 4
-
-// motor two (Left)
-#define MotorLeftPWMIn3 8
-#define MotorLeftPWMIn4 7
+// motor one (Left)
+#define MotorLeftPWMIn1 8
+#define MotorLeftPWMIn2 7
 #define encoderLeftPinA 2
 #define encoderLeftPinB 13
+
+// motor two (Right)
+#define MotorRightPWMIn3  10
+#define MotorRightPWMIn4 9
+#define encoderRightPinA 3
+#define encoderRightPinB 4
 
 //stepper
 #define motorPin1  0     // IN1 on the ULN2003 driver 1
@@ -26,12 +26,12 @@
 #define Sneutral 100
 
 
-volatile int encoderNumberRight= 0;
 volatile int encoderNumberLeft= 0;
+volatile int encoderNumberRight= 0;
 int encoderTotal = 0;
 
-int speedLeftMotor = 140;
-int speedRightMotor = 140;
+int speedRightMotor = 110;
+int speedLeftMotor = 110;
 
 int incomingByte = 0; 
 
@@ -46,18 +46,18 @@ void setup() {
   pinMode(motorENA,OUTPUT);
 
   
-  pinMode(MotorRightPWMIn1,OUTPUT);
-  pinMode(MotorRightPWMIn2,OUTPUT);
-  pinMode (encoderRightPinA,INPUT_PULLUP);
-  pinMode (encoderRightPinB,INPUT_PULLUP);
-  
-  pinMode(MotorLeftPWMIn3,OUTPUT);
-  pinMode(MotorLeftPWMIn4,OUTPUT);
+  pinMode(MotorLeftPWMIn1,OUTPUT);
+  pinMode(MotorLeftPWMIn2,OUTPUT);
   pinMode (encoderLeftPinA,INPUT_PULLUP);
   pinMode (encoderLeftPinB,INPUT_PULLUP);
+  
+  pinMode(MotorRightPWMIn3,OUTPUT);
+  pinMode(MotorRightPWMIn4,OUTPUT);
+  pinMode (encoderRightPinA,INPUT_PULLUP);
+  pinMode (encoderRightPinB,INPUT_PULLUP);
 
-  attachInterrupt(digitalPinToInterrupt(encoderLeftPinA), encoderright, FALLING);
-  attachInterrupt(digitalPinToInterrupt(encoderRightPinA), encoderleft, FALLING);
+  attachInterrupt(digitalPinToInterrupt(encoderRightPinA), encoderLeft, RISING);
+  attachInterrupt(digitalPinToInterrupt(encoderLeftPinA), encoderRight, RISING);
 
 }
 
@@ -65,21 +65,13 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
 
-    //readSerial();
-
-    testEncoders();
-
-
-   
-    moveForward(speedLeftMotor, speedRightMotor);
-
-    //if(encoderNumberRight >= (528)){
-      
-     // stopCar();
-      //Serial.println("stop car:");
-     // delay(5000);
-      
-    //}
+    readSerial();
+    //testEncoders();
+    delay(500);
+    stopCar();
+    
+    
+  
     
     //stopCar();
    
@@ -89,14 +81,14 @@ void loop() {
 
 
 void testEncoders(){
-   if(encoderNumberRight%100 == 0 ){
-     Serial.print("encoder Right:");
-    Serial.println(encoderNumberRight);
+   if(encoderNumberLeft%100 == 0 ){
+     Serial.print("encoder Left:");
+    Serial.println(encoderNumberLeft);
    }
 
-   if(encoderNumberLeft%100 == 0){
-     Serial.print("encoder Left:");
-     Serial.println(encoderNumberLeft);
+   if(encoderNumberRight%100 == 0){
+     Serial.print("encoder Right:");
+     Serial.println(encoderNumberRight);
    }
   
 }
@@ -105,111 +97,115 @@ void computeSerial(){
     if(serialInput[0] == SStop){
       stopCar();
     }else if(serialInput[1] > Sneutral){
-      // to the right
-      moveRight();
-    }else if(serialInput[1] < Sneutral){
-      // to the left
+      // to the Left
       moveLeft();
+    }else if(serialInput[1] < Sneutral){
+      // to the Right
+      moveRight();
     }else if(serialInput[1] == Sneutral){
       // straight   
-      moveForward(speedLeftMotor, speedRightMotor); 
+      moveForward(speedRightMotor, speedLeftMotor); 
     }
 }
 void readSerial(){
   if (Serial.available() > 3) {
     for(int i= 0; i<4; i++){         
         serialInput[i] = Serial.read();
-        Serial.write(serialInput[i]);
+       // Serial.write(serialInput[i]);
     }
     computeSerial();
+  }else if(Serial.available() == 0){
+    for(int i= 0; i<4; i++){         
+        serialInput[i] = 0;
+    }
   }
 }
 
 void stopCar(){
   analogWrite(motorENA,0) ;
-  digitalWrite(MotorLeftPWMIn4,LOW) ;
-  digitalWrite(MotorLeftPWMIn3,LOW) ;
+  digitalWrite(MotorRightPWMIn4,LOW) ;
+  digitalWrite(MotorRightPWMIn3,LOW) ;
 
-    analogWrite(motorENB,0);
-  digitalWrite(MotorRightPWMIn2,LOW); 
-  digitalWrite(MotorRightPWMIn1,LOW);
+  analogWrite(motorENB,0);
+  digitalWrite(MotorLeftPWMIn2,LOW); 
+  digitalWrite(MotorLeftPWMIn1,LOW);
   
 }
 
-void moveRight(){
-  moveLeftForward(speedLeftMotor);
-  moveRightBackward(speedRightMotor);
-}
 void moveLeft(){
   moveRightForward(speedRightMotor);
   moveLeftBackward(speedLeftMotor);
 }
-void moveForward(int speedLeftMotor, int speedRightMotor){
- moveRightForward(speedRightMotor);
+void moveRight(){
+  moveLeftForward(speedLeftMotor);
+  moveRightBackward(speedRightMotor);
+}
+void moveForward(int speedRightMotor, int speedLeftMotor){
  moveLeftForward(speedLeftMotor);
+ moveRightForward(speedRightMotor);
 }
 
-void moveBackward(int speedLeftMotor, int speedRightMotor){
- moveRightBackward(speedRightMotor);
+void moveBackward(int speedRightMotor, int speedLeftMotor){
  moveLeftBackward(speedLeftMotor);
-}
-
-void moveLeftBackward(int speedLeftMotor){
-  analogWrite(motorENA,speedLeftMotor) ;
-  digitalWrite(MotorLeftPWMIn4,LOW) ;
-  digitalWrite(MotorLeftPWMIn3,HIGH) ;
+ moveRightBackward(speedRightMotor);
 }
 
 void moveRightBackward(int speedRightMotor){
-  analogWrite(motorENB,speedRightMotor);
-  digitalWrite(MotorRightPWMIn2,LOW); 
-  digitalWrite(MotorRightPWMIn1,HIGH);
+  analogWrite(motorENA,speedRightMotor) ;
+  digitalWrite(MotorRightPWMIn4,LOW) ;
+  digitalWrite(MotorRightPWMIn3,HIGH) ;
+}
+
+void moveLeftBackward(int speedLeftMotor){
+  analogWrite(motorENB,speedLeftMotor);
+  digitalWrite(MotorLeftPWMIn2,LOW); 
+  digitalWrite(MotorLeftPWMIn1,HIGH);
 }
 
 
-void moveLeftForward(int speedLeftMotor){
-    analogWrite(motorENA,speedLeftMotor) ;
-    digitalWrite(MotorLeftPWMIn3,LOW) ;
-    digitalWrite(MotorLeftPWMIn4,HIGH) ;
-}
 void moveRightForward(int speedRightMotor){
-  analogWrite(motorENB,speedRightMotor);
-  digitalWrite(MotorRightPWMIn1,LOW); 
-  digitalWrite(MotorRightPWMIn2,HIGH);
+    analogWrite(motorENA,speedRightMotor) ;
+    digitalWrite(MotorRightPWMIn3,LOW) ;
+    digitalWrite(MotorRightPWMIn4,HIGH) ;
+}
+void moveLeftForward(int speedLeftMotor){
+  analogWrite(motorENB,speedLeftMotor);
+  digitalWrite(MotorLeftPWMIn1,LOW); 
+  digitalWrite(MotorLeftPWMIn2,HIGH);
 }
 
 // TODO
 int checkEncoders(){
-  return encoderNumberLeft - encoderNumberRight;
+  return encoderNumberRight - encoderNumberLeft;
 }
 
 void speedControl(){
   int motorDifference = (checkEncoders()/25);
-  if(( speedRightMotor + ( motorDifference)) < 256){
-    speedRightMotor = speedLeftMotor + ( motorDifference);
+  if(( speedLeftMotor + ( motorDifference)) < 256){
+    speedLeftMotor = speedRightMotor + ( motorDifference);
   }else{
-    speedRightMotor = 255;
+    speedLeftMotor = 255;
   }  
 }
 // END TODO
 
 
-void encoderright(){
- // if(digitalRead(encoderRightPinB) == HIGH){
-    encoderNumberRight++;
+void encoderLeft(){
+ // if(digitalRead(encoderLeftPinB) == HIGH){
+    encoderNumberLeft++;
 //    stopCar();
   //}else{
-  //  encoderNumberRight--;
+  //  encoderNumberLeft--;
  // }
  
 }
-void encoderleft(){
- // if(digitalRead(encoderLeftPinB) == HIGH){
-    encoderNumberLeft++;
+void encoderRight(){
+ // if(digitalRead(encoderRightPinB) == HIGH){
+    encoderNumberRight++;
  // }else{
-   // encoderNumberLeft--;
+   // encoderNumberRight--;
   //}
-    //Serial.println(encoderNumberLeft);
+    //Serial.println(encoderNumberRight);
 }
 
 
