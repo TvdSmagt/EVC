@@ -32,6 +32,7 @@ const int DISPLAY_VIDEO = 1; //1=DISPLAY,0=NO_DISPLAY
 const int ARDUINO_CONNECT = 1; //1=CONNECT, 0=DONT_CONNECT
 VideoWriter oVideoWriter;
 VideoCapture vCapture;
+raspicam::RaspiCam_Cv cCapture;
 //raspicam::RaspiCam_Cv cCapture;
 
 
@@ -73,16 +74,15 @@ void processVideo(char* videoFilename) {
     if(ARDUINO_CONNECT){
 	if(!ArduinoOpen()){cout<<"Cant connect to Arduino";
 	    exit(EXIT_FAILURE);}}
-	raspicam::RaspiCam_Cv cCapture;
 	if (INPUT_VIDEO){
 		vCapture = VideoCapture(videoFilename);
-		if(!vCapture.isOpened()){cerr <<"Unable to open the video file"<<endl; exit(EXIT_FAILURE);}
+		if(!vCapture.isOpened()){cerr <<"Unable to open the video file.\n"<<endl; exit(EXIT_FAILURE);}
 	 	//Get screen sizes
     		dWidth = vCapture.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
     		dHeight = vCapture.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
 	}else{
 		cCapture.set( CV_CAP_PROP_FORMAT, CV_8UC3 );
-		if (!cCapture.open()) {cerr<<"Error opening the capture"<<endl;exit(EXIT_FAILURE);}
+		if (!cCapture.open()) {cerr<<"Unable to open the camera feed.\n"<<endl;exit(EXIT_FAILURE);}
 		 //Get screen sizes
 		dWidth = cCapture.get(CV_CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
 		dHeight = cCapture.get(CV_CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
@@ -106,10 +106,10 @@ void processVideo(char* videoFilename) {
     while( keyboard != 'q' && keyboard != 27 ){
 		double time_ = cv::getTickCount();
 		if (!INPUT_VIDEO){
-			if(!cCapture.grab()){cerr<<"Unable to read the next frame."<<endl;exit(EXIT_FAILURE);}
+			if(!cCapture.grab()){cerr<<"Unable to read camera frame.\n"<<endl;exit(EXIT_FAILURE);}
 			cCapture.retrieve(src);
 		}else{
-			if(!vCapture.read(src)){cerr<<"Unable to read camera frame."<<endl;exit(EXIT_FAILURE);}
+			if(!vCapture.read(src)){cerr<<"Unable to read video frame.\n"<<endl;exit(EXIT_FAILURE);}
 		}
        //Start processing frame
         if (ITER % FrameSkip==FrameSkip/5 && !src.empty() && ITER > 0){
