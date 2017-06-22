@@ -23,18 +23,18 @@ using namespace std;
 
 // Global variables
 int ITER = 0;
+double fps_total = 0;
 int FrameSkip = 1;
 double dWidth,dHeight;
 char keyboard = 0 ; //input from keyboard
-const int INPUT_VIDEO = 0; //1=VIDEO, 0=CAMERA
-const int SAVE_VIDEO = 1; //1=SAVE,0=DONT SAVE
+const int INPUT_VIDEO = 1; //1=VIDEO, 0=CAMERA
+const int SAVE_VIDEO = 0; //1=SAVE,0=DONT SAVE
 const int DISPLAY_VIDEO = 1; //1=DISPLAY,0=NO_DISPLAY
-const int ARDUINO_CONNECT = 1; //1=CONNECT, 0=DONT_CONNECT
+const int ARDUINO_CONNECT = 0; //1=CONNECT, 0=DONT_CONNECT
 VideoWriter oVideoWriter;
 VideoCapture vCapture;
 raspicam::RaspiCam_Cv cCapture;
-//raspicam::RaspiCam_Cv cCapture;
-
+Mat src, src_path, src_sign, dst_path, dst_sign;
 
 //Functions
 void help();
@@ -96,13 +96,12 @@ void processVideo(char* videoFilename) {
 	if(SAVE_VIDEO){oVideoWriter = VideoWriter("videos/" + string(ctime) + ".avi", CV_FOURCC('M','J','P','G'),5 ,frameSize , true);cout<<"Opening VideoWriter\n";}
 
     //Set Cropping parameters
-    float yFl_Top = float(dHeight) * pctCropTop;
-	float yFl_Bot = float(dHeight) * pctCropBottom;
-    int y_top = int(yFl_Top + 0.5);//0.5 for rounding up
-    int y_bot = int(yFl_Bot + 0.5);
+    float yFl_top = float(dHeight) * pctCropTop;
+	float yFl_bot = float(dHeight) * pctCropBottom;
+    int y_top = int(yFl_top + 0.5);//0.5 for rounding up
+    int y_bot = int(yFl_bot + 0.5);
 	int y_Sum = y_top + y_bot;
 	cv::Rect myROI(0,y_top,dWidth,dHeight-y_Sum);
-    Mat src, src_path, src_sign, dst_path, dst_sign;
 
     //read input data. ESC or 'q' for quitting
     while( keyboard != 'q' && keyboard != 27 ){
@@ -111,7 +110,7 @@ void processVideo(char* videoFilename) {
 			if(!cCapture.grab()){cerr<<"\nUnable to read camera frame.\n"<<endl;exit(EXIT_FAILURE);}
 			cCapture.retrieve(src);
 		}else{
-			if(!vCapture.read(src)){cerr<<"\nUnable to read video frame.\n"<<endl;exit(EXIT_FAILURE);}
+			if(!vCapture.read(src)){cerr<<"\nUnable to read video frame.\n"<<endl;cout<< "\tAverage fps: " << fps_total/ITER << "\n";exit(EXIT_FAILURE);}
 		}
        //Start processing frame
         if (ITER % FrameSkip==0 && !src.empty() && ITER > 0){
@@ -138,14 +137,16 @@ void processVideo(char* videoFilename) {
 			}
 			}
 		double secondsElapsed = double (cv::getTickCount()-time_)/double(cv::getTickFrequency());
-		cout << "\tTime :" << secondsElapsed << "\tFPS: " << 1/secondsElapsed;
+		double fps = 1 / secondsElapsed;
+		fps_total += fps;
+		cout << "\tTime :" << secondsElapsed << "\tFPS: " << fps; 
         }
         //Finalize
         ITER++;
         keyboard = (char)waitKey( 30 );
     }
 	if(ARDUINO_CONNECT){carStop();}
-    cout<<"Stop capture..."<<endl;
+    cout<<"Stop capture..."<<endl;cout<< "\tAverage fps: " << fps_total/ITER << "\n";
     //delete capture object
     if(INPUT_VIDEO){
 	vCapture.release();
