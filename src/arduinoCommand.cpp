@@ -75,5 +75,7 @@ void carStop(){
 	ArduinoCommand2(0,0);
 }
 void uTurn(){
-
+	goBackward(20);
+	goLeft(90,10);
+	goLeft(90,10);
 }
