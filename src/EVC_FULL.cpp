@@ -72,8 +72,7 @@ int main(int argc, char* argv[])
 void processVideo(char* videoFilename) {
     //Open Serial Connection With Arduino
     if(ARDUINO_CONNECT){
-	if(!ArduinoOpen()){cout<<"Cant connect to Arduino";
-	    exit(EXIT_FAILURE);}}
+	if(!ArduinoOpen()){exit(EXIT_FAILURE);}}
 	if (INPUT_VIDEO){
 		vCapture = VideoCapture(videoFilename);
 		if(!vCapture.isOpened()){cerr <<"Unable to open the video file.\n"<<endl; exit(EXIT_FAILURE);}
@@ -97,28 +96,31 @@ void processVideo(char* videoFilename) {
 	if(SAVE_VIDEO){oVideoWriter = VideoWriter("videos/" + string(ctime) + ".avi", CV_FOURCC('M','J','P','G'),5 ,frameSize , true);cout<<"Opening VideoWriter\n";}
 
     //Set Cropping parameters
-    float yFl = float(dHeight) * pctCropHeight;
-    int y = int(yFl + 0.5);
-    cv::Rect myROI(0,y,dWidth,dHeight-y);
+    float yFl_Top = float(dHeight) * pctCropTop;
+	float yFl_Bot = float(dHeight) * pctCropBottom;
+    int y_top = int(yFl_Top + 0.5);//0.5 for rounding up
+    int y_bot = int(yFl_Bot + 0.5);
+	int y_Sum = y_top + y_bot;
+	cv::Rect myROI(0,y_top,dWidth,dHeight-y_Sum);
     Mat src, src_path, src_sign, dst_path, dst_sign;
 
     //read input data. ESC or 'q' for quitting
     while( keyboard != 'q' && keyboard != 27 ){
 		double time_ = cv::getTickCount();
 		if (!INPUT_VIDEO){
-			if(!cCapture.grab()){cerr<<"Unable to read camera frame.\n"<<endl;exit(EXIT_FAILURE);}
+			if(!cCapture.grab()){cerr<<"\nUnable to read camera frame.\n"<<endl;exit(EXIT_FAILURE);}
 			cCapture.retrieve(src);
 		}else{
-			if(!vCapture.read(src)){cerr<<"Unable to read video frame.\n"<<endl;exit(EXIT_FAILURE);}
+			if(!vCapture.read(src)){cerr<<"\nUnable to read video frame.\n"<<endl;exit(EXIT_FAILURE);}
 		}
        //Start processing frame
-        if (ITER % FrameSkip==FrameSkip/5 && !src.empty() && ITER > 0){
-			cout << "\n" << ITER << "\n Processing image... : ";
+        if (ITER % FrameSkip==0 && !src.empty() && ITER > 0){
+			cout << "\n" << ITER << "\t Processing image... : ";
 			//Crop image to remove top part which is not of interest
 			src_path = src(myROI);
-			if(SAVE_VIDEO){oVideoWriter.write(src);cout<<"Saving Frame.\n";}
-			int iDirPath = findPath(src_path,dst_path,DISPLAY_VIDEO, dWidth, dHeight);
-			int iDirSign = findSign(src_sign,dst_sign,DISPLAY_VIDEO, dWidth, dHeight);
+			if(SAVE_VIDEO){oVideoWriter.write(src);cout<<"\t Saving Frame.";}
+			int iDirPath = findPath(src_path,dst_path,DISPLAY_VIDEO, dWidth, dHeight - y_Sum);
+			int iDirSign = findSign(src_sign,dst_sign,DISPLAY_VIDEO, dWidth, dHeight - y_Sum);
 
         //Give commands
 			switch (iDirPath){
@@ -136,12 +138,13 @@ void processVideo(char* videoFilename) {
 			}
 			}
 		double secondsElapsed = double (cv::getTickCount()-time_)/double(cv::getTickFrequency());
-		cout << "Time :" << secondsElapsed << " FPS: " << 1/secondsElapsed;
+		cout << "\tTime :" << secondsElapsed << "\tFPS: " << 1/secondsElapsed;
         }
         //Finalize
         ITER++;
         keyboard = (char)waitKey( 30 );
     }
+	if(ARDUINO_CONNECT){carStop();}
     cout<<"Stop capture..."<<endl;
     //delete capture object
     if(INPUT_VIDEO){

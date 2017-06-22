@@ -17,6 +17,7 @@ void goRight(int degrees, int power);
 void goForward(int power);
 void goBackward(int power);
 void carStop();
+void uTurn();
 
 bool ArduinoOpen(){
 	fd = serialOpen ("/dev/ttyUSB0",9600);
@@ -45,7 +46,7 @@ void ArduinoCommand2(int power, int degrees){
 	if (power > NEUTRAL){		Force = 2*NEUTRAL;}
 	 else if(power <- NEUTRAL){	Force = 0;} 
 	 else {				Force += power;}
-	cout << "Sending Message: " << Force << " " << Steer << " " << Force << " " << Steer << "\n";
+//	cout << "Sending Message: " << Force << " " << Steer << " " << Force << " " << Steer << "\n";
 //Send Force and Steer values
 	serialPutchar(fd,int(Force));
 	serialPutchar(fd,int(Steer));
@@ -54,22 +55,25 @@ void ArduinoCommand2(int power, int degrees){
 	serialPutchar(fd,int(Steer));
 }
 void goLeft(int degrees, int power){
-	cout << "Turn Left\n";
+//	cout << "Turn Left\n";
 	ArduinoCommand2(power,degrees);
 }
 void goRight(int degrees, int power){
-	cout << "Turn Right\n";
+//	cout << "Turn Right\n";
 	ArduinoCommand2(power,-degrees);
 }
 void goForward(int power){
-	cout << "Go Forward\n";
+//	cout << "Go Forward\n";
 	ArduinoCommand2(power,0);
 }
 void goBackward(int power){
-	cout << "Go Backward\n";
+//	cout << "Go Backward\n";
 	ArduinoCommand2(-power,0);
 }
 void carStop(){
-	cout << "Stop!\n";
+//	cout << "Stop!\n";
 	ArduinoCommand2(0,0);
+}
+void uTurn(){
+
 }
