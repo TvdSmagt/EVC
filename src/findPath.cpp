@@ -26,7 +26,8 @@ int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight
 int findPath(InputArray src, OutputArray dst, bool display, double dWidth, double dHeight){
 	Mat thresh,hough;
 	vector<Mat> Images;
-	Mat command(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));processFrame(src,thresh,hough,dWidth,dHeight);
+	Mat command(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
+	processFrame(src,thresh,hough,dWidth,dHeight);
 	//processFrame_adaptive(src_crop,thresh,hough,dWidth,dHeight);
 /*
 	//Process results into a working roadmap

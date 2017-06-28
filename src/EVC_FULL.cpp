@@ -146,11 +146,11 @@ void processVideo(char* videoFilename) {
         keyboard = (char)waitKey( 30 );
     }
 	if(ARDUINO_CONNECT){carStop();}
-    cout<<"Stop capture..."<<endl;cout<< "\tAverage fps: " << fps_total/ITER << "\n";
+    cout<<"\nStop capture..."<<endl;cout<< "\tAverage fps: " << fps_total/ITER << "\n";
     //delete capture object
     if(INPUT_VIDEO){
-	vCapture.release();
+		vCapture.release();
     }else{
-	cCapture.release();
+		cCapture.release();
     }
 }
