@@ -9,11 +9,11 @@ int iThresh = 80; //outside: 60
 const int maxLines = 200;
 const int curved = 1;
 const int straight = 1;
-const int compRatio = 1;
+const int compRatio = 2;
 const int SHOW_LINES = 1;
 vector<Vec4i> lines;
 int md = 12;
-int dirThresh = 5;
+int dirThresh = 10;
 
 //Functions
 int findPath(InputArray src, OutputArray dst, bool display, double dWidth, double dHeight);
@@ -68,9 +68,9 @@ int findPath(InputArray src, OutputArray dst, bool display, double dWidth, doubl
 	Images.push_back(thresh);
 	Images.push_back(hough);
 //	Images.push_back(command);
-	Mat canvas = makeCanvas(Images, dHeight*2,3);
+	Mat canvas = makeCanvas(Images, dHeight*2*compRatio,3);
 	namedWindow("Canvas", WINDOW_NORMAL);
-	cv::resizeWindow("Canvas", dWidth/2, dHeight/2);
+	cv::resizeWindow("Canvas", dWidth, dHeight);
 	imshow("Canvas",canvas);
 	}
 	return direction;
@@ -201,7 +201,7 @@ int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight
 		}
 	}
 
-	int dHeight_New = dHeight * 0.5 / compRatio;
+	int dHeight_New = dHeight * 0.5;// / compRatio;
 	int dWidth_Start = int(dWidth/md);
 	int dWidth_Stop = int(dWidth*(md-1)/md);
 	Point d1l(dWidth_Start,dHeight);

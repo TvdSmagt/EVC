@@ -20,10 +20,10 @@ void carStop();
 void uTurn();
 
 bool ArduinoOpen(){
-	fd = serialOpen ("/dev/ttyUSB0",9600);
+				  fd = serialOpen ("/dev/ttyUSB0",9600);
 	if (fd<0){int fd = serialOpen ("/dev/ttyUSB1",9600);}
 	if (fd<0){int fd = serialOpen ("/dev/ttyACM0",9600);}
-	if (fd<0){cerr << "Unable to open SSH connection to ARDUINO\n"; return false;}
+	if (fd<0){cerr << "Unable to open connection to ARDUINO\n"; return false;}
 	serialFlush(fd);
 	return 1;
 }
