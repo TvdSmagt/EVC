@@ -23,7 +23,7 @@ int main ()
 		} else if((command == "r") || (command == "right")){
 			goRight(10,10);
 		} else if((command == "f") || (command == "forward")){
-			goForward(50);
+			goForward(10);
 		}
 	}
 	/*cout << "Starting...\n";

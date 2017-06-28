@@ -20,10 +20,11 @@ void carStop();
 void uTurn();
 
 bool ArduinoOpen(){
-				  fd = serialOpen ("/dev/ttyUSB0",9600);
-	if (fd<0){int fd = serialOpen ("/dev/ttyUSB1",9600);}
-	if (fd<0){int fd = serialOpen ("/dev/ttyACM0",9600);}
-	if (fd<0){cerr << "Unable to open connection to ARDUINO\n"; return false;}
+	cout<<"\nOpening USB connection w/Arduino\nTrying USB0...";
+	fd = serialOpen ("/dev/ttyUSB0",9600);
+	if (fd<0){cout<<"Failed!\n Trying USB1...";fd = serialOpen ("/dev/ttyUSB1",9600);}
+	if (fd<0){cout<<"Failed!\n Trying ACM0...";fd = serialOpen ("/dev/ttyACM0",9600);}
+	if (fd<0){cerr <<"Failed!\nUnable to open connection to ARDUINO\n"; return false;}
 	serialFlush(fd);
 	return 1;
 }

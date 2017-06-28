@@ -5,14 +5,14 @@ using namespace std;
 enum DriveCommand {DRIVE_STRAIGHT=0,TURN_LEFT,TURN_RIGHT};
 float pctCropTop = 0.60; //0.1 - Previous: 0.1
 float pctCropBottom = 0.25;
-int iThresh = 80; //outside: 60
+int iThresh = 45; //outside: 60
 const int maxLines = 200;
 const int curved = 1;
 const int straight = 1;
 const int compRatio = 2;
 const int SHOW_LINES = 1;
 vector<Vec4i> lines;
-int md = 12;
+int md = 8;
 int dirThresh = 10;
 
 //Functions
@@ -230,7 +230,7 @@ int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight
 		} else if(favor_right > favor_left){
 			direction = TURN_RIGHT;cout << "\tTurn Right  " << favor_right << " " << favor_left;
 		}
-	} else cout << "\tGo Straight " << favor_right << " " << favor_left;
+	} else cout << "\tGo Straight " << favor_right << " " << favor_left << " ";
 	temp.copyTo(dst);
 	return direction;
 
