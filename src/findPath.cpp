@@ -6,8 +6,8 @@ using namespace std;
 //Variables
 enum DriveCommand {DRIVE_STRAIGHT=0,TURN_LEFT,TURN_RIGHT};
 enum SignCommand {PREF_NONE = 0, PREF_LEFT,PREF_RIGHT,PREF_STRAIGHT};
-float pctCropTop = 0.60; //0.1 - Previous: 0.1
-float pctCropBottom = 0.1;
+float pctCropTop = 0.55; //0.1 - Previous: 0.1
+float pctCropBottom = 0.0;
 int iThresh = 70; //outside: 60
 const int maxLines = 200;
 const int curved = 1;
@@ -15,7 +15,7 @@ const int straight = 1;
 const int compRatio = 2;
 const int SHOW_LINES = 1;
 vector<Vec4i> lines;
-float pctFree = 0.25;
+float pctFree = 0.30;
 int md = 6;
 int dirThresh = 3; //10;
 int borThresh = 8;
@@ -27,8 +27,6 @@ vector<int> max_angle,max_range;
 int findPath(InputArray src, OutputArray dst, bool display, double dWidth, double dHeight, int iDirSign);
 void processFrame(InputArray src,OutputArray dst,OutputArray hough, double dWidth, double dHeight);
 void processFrame_adaptive(InputArray src,OutputArray dst,OutputArray hough, double dWidth, double dHeight);
-int searchLongestLine_Angle(InputArray src,OutputArray dst, double dWidth, double dHeight);
-int searchLongestLine_Straight(InputArray src,OutputArray dst, double dWidth, double dHeight);
 int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight);
 
 int findPath(InputArray src, OutputArray dst, bool display, double dWidth, double dHeight, int iDirSign){
@@ -40,19 +38,20 @@ int findPath(InputArray src, OutputArray dst, bool display, double dWidth, doubl
 	if ((iDirSign == PREF_LEFT)&&(direction == DRIVE_STRAIGHT)){
 		cout << "Search Left!";
 		leftFree = true;		
-		for (int i = 2; i <= maxLines / 8; i++){
-			if ((max_range[i]/dHeight) < (1-pctFree)){
+		for (int i = 2; i <= maxLines / 12; i++){
+			//cout << "\n" << (max_range[i]/dHeight) << " < " << double(0.5);
+			if ((max_range[i]/dHeight) < 0.5){
 				leftFree = false;
 			}
 		}
-		if (leftFree){
+		if (leftFree==true){
 			direction = TURN_LEFT;
 			cout <<"Turn Left (Prefer)";
 		}
 	} else if ((iDirSign == PREF_RIGHT)&&(direction == DRIVE_STRAIGHT)){
 		cout <<"Search Right!";
 		rightFree = true;		
-		for (int i = maxLines * 7 /8; i <= maxLines; i++){
+		for (int i = maxLines * 11 /12; i <= maxLines; i++){
 			if (max_range[i]/dHeight < (1-pctFree)){
 				rightFree = false;
 			}
@@ -95,94 +94,13 @@ void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dW
 	//Canny
 	//Canny(thresh,canny,20,50,3);
 	//cout << "\n Draw Houghlines";
-	HoughLinesP( thresh, lines, 1, CV_PI/180, 0/compRatio, 0/compRatio, 0);//200,100,0
+	HoughLinesP( thresh, lines, 1, CV_PI/180, 40/compRatio, 0/compRatio, 0);//200,100,0
 	for( size_t i = 0; i < lines.size(); i++ )
 	{
 		line(canvas, Point(lines[i][0], lines[i][1]),
 			Point(lines[i][2], lines[i][3]), Scalar(255,255,255), 8, 3 );
 	}
 	canvas.copyTo(hough);
-}
-void processFrame_adaptive(InputArray src,OutputArray dst,OutputArray hough, double dWidth, double dHeight){
-	Mat gray;
-	Mat canvas(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
-	cvtColor(src,gray,CV_RGB2GRAY);
-	adaptiveThreshold(gray,dst,255,ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV,55,20);
-	//adaptiveThreshold(gray,dst2,255,ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY_INV,85,20);
-	//Apply HoughLines
-	HoughLinesP( dst, lines, 1, CV_PI/180, 200, 100, 0);
-	for( size_t i = 0; i < lines.size(); i++ )
-	{
-		line(canvas, Point(lines[i][0], lines[i][1]),
-			Point(lines[i][2], lines[i][3]), Scalar(0,0,255), 2, 3 );
-	}
-	canvas.copyTo(hough);
-}
-int searchLongestLine_Straight(InputArray src,OutputArray dst, double dWidth, double dHeight){
-	vector<int> max_angle,max_range;
-	Mat temp;
-	src.copyTo(temp);
-	Rect bounds(0, 0, dWidth, dHeight);
-	for(int i = 2; i<=maxLines-2; i++)
-	{
-		Point cen(int(dWidth*i/maxLines),int(dHeight));
-		for (int r = 5; r <= dHeight+1; r++)
-		{
-			Point p2(dWidth*i/maxLines,dHeight-r);
-			if (!bounds.contains(p2) || (temp.at<Vec3b>(p2).val[2] >0)){
-				if(SHOW_LINES){line(temp, cen, p2, Scalar(0,255,0), 2, 3 );}
-				max_angle.push_back(i);
-				max_range.push_back(r);
-				break;
-			}
-		}
-	}
-	int x_max, r = 0;
-		for (uint64 i = 0;i<max_range.size();i++){
-			if ((r < max_range[i]) || ((r <= max_range[i])&&(abs(max_angle[i]-maxLines/2-maxLines/8) < abs(x_max-maxLines/2-maxLines/8)))){
-				x_max = max_angle[i];
-				r = max_range[i];
-			}
-		}
-	Point cen(int(dWidth*x_max/maxLines),int(dHeight));
-	Point p2(int(dWidth*x_max/maxLines),int(dHeight-r));
-	line(temp, cen, p2 , Scalar(255,0,0), 8, 3 );
-	temp.copyTo(dst);
-	return x_max;
-}
-int searchLongestLine_Angle(InputArray src,OutputArray dst, double dWidth, double dHeight){
-	vector<int> max_angle,max_range;
-	Mat temp;
-	double a;
-	src.copyTo(temp);
-	Point cen(int(dWidth/2),int(dHeight));
-	Rect bounds(0, 0, dWidth, dHeight);
-	for(int i = 2; i<=maxLines; i++)
-	{
-		a = (i)*CV_PI/(maxLines+2) - 0.5 * CV_PI;
-		for (int r = 5; r <= 2000; r++)
-		{
-			Point p2(cen.x-sin(a)*r, cen.y-cos(a)*r);
-			if (!bounds.contains(p2) || (temp.at<Vec3b>(p2).val[2] >0)){
-				if(SHOW_LINES){line(temp, cen, p2, Scalar(0,255,0), 2, 3 );}
-				max_angle.push_back(i);
-				max_range.push_back(r);
-				break;
-			}
-		}
-	}
-	int angle, r = 0;
-	for (uint64 i = 0;i<max_range.size();i++){
-		if ((r < max_range[i]) || ((r <= max_range[i])&&(abs(max_angle[i]+maxLines/2) < abs(angle+maxLines/2)))){
-			angle = max_angle[i];
-			r = max_range[i];
-		}
-	}
-	a = (angle)*CV_PI/(maxLines+2) - 0.5 * CV_PI;
-	Point p2(cen.x-sin(a)*r, cen.y-cos(a)*r);
-	line(temp, cen, p2 , Scalar(255,0,0), 8, 3 );
-	temp.copyTo(dst);
-	return angle;
 }
 int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight){
 	int direction = DRIVE_STRAIGHT;

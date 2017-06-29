@@ -28,8 +28,8 @@ int FrameSkip = 1;
 double dWidth,dHeight;
 char keyboard = 0 ; //input from keyboard
 const int INPUT_VIDEO = 0; //1=VIDEO, 0=CAMERA
-const int SAVE_VIDEO = 1; //1=SAVE, 0=DONT SAVE
-const int DISPLAY_VIDEO = 1; //1=DISPLAY,0=NO_DISPLAY
+const int SAVE_VIDEO = 0; //1=SAVE, 0=DONT SAVE
+const int DISPLAY_VIDEO = 0; //1=DISPLAY,0=NO_DISPLAY
 const int ARDUINO_CONNECT = 1; //1=CONNECT, 0=DONT_CONNECT
 const int P_DRIVE = 4;
 int angle_turned = 0;
@@ -159,7 +159,7 @@ void VideoCapture_Open(char* videoFilename){
 void VideoCapture_Grab(){
 	if (!INPUT_VIDEO){
 			if(!cCapture.grab()){cerr<<"\nUnable to read camera frame.\n"<<endl;exit(EXIT_FAILURE);}
-			cout << "\nCapturing Camera";
+			//cout << "\nCapturing Camera";
 			cCapture.retrieve(src);
 		}else{
 			if(!vCapture.read(src)){cerr<<"\nUnable to read video frame.\n"<<endl;cout<< "\tAverage fps: " << fps_total/ITER << "\n";exit(EXIT_FAILURE);}
@@ -196,7 +196,7 @@ void SendDrivingCommands(){
 		case TURN_LEFT :{
 			if(prefDirection==PREF_LEFT){
 				angles += P_DRIVE;
-				if(angles > 80){prefDirection = SIGN_NONE;angles=0;cout<<"Stop Searching";}
+				if(angles > 160){prefDirection = SIGN_NONE;angles=0;cout<<"Stop Searching";}
 			}
 			if(ARDUINO_CONNECT){goLeft(P_DRIVE,10);}
 			break;
@@ -204,7 +204,7 @@ void SendDrivingCommands(){
 		case TURN_RIGHT:{
 			if(prefDirection == PREF_RIGHT){
 				angles += P_DRIVE;
-				if(angles > 80){prefDirection = SIGN_NONE;angles=0;cout<<"Stop Searching";}
+				if(angles > 160){prefDirection = SIGN_NONE;angles=0;cout<<"Stop Searching";}
 			}
 			if(ARDUINO_CONNECT){goRight(P_DRIVE,10);angles+=P_DRIVE;}
 			break;
