@@ -10,8 +10,8 @@ int fd;
 
 //Functions
 bool ArduinoOpen();
-void ArduinoCommand(int command);
-void ArduinoCommand2(int power, int degrees);
+void ArduinoCommand(int power, int degrees);
+void SendCommand(int Force, int Steer);
 void goLeft(int degrees, int power);
 void goRight(int degrees, int power);
 void goForward(int power);
@@ -20,25 +20,18 @@ void carStop();
 void uTurn();
 
 bool ArduinoOpen(){
+	cout<<"\n----------------------------------------------------";
 	cout<<"\nOpening USB connection w/Arduino\nTrying USB0...";
 	fd = serialOpen ("/dev/ttyUSB0",9600);
-	if (fd<0){cout<<"Failed!\n Trying USB1...";fd = serialOpen ("/dev/ttyUSB1",9600);}
-	if (fd<0){cout<<"Failed!\n Trying ACM0...";fd = serialOpen ("/dev/ttyACM0",9600);}
-	if (fd<0){cerr <<"Failed!\nUnable to open connection to ARDUINO\n"; return false;}
+	if (fd<0){cout<<"\tFailed!\nTrying USB1...";fd = serialOpen ("/dev/ttyUSB1",9600);}
+	if (fd<0){cout<<"\tFailed!\nTrying ACM0...";fd = serialOpen ("/dev/ttyACM0",9600);}
+	if (fd<0){cerr <<"\tFailed!\nUnable to open connection to ARDUINO\n"; return false;} else {cout << "\tSuccess!";}
 	serialFlush(fd);
+	cout<<"\n----------------------------------------------------";
 	return 1;
 }
 
-void ArduinoCommand(int command){
-	for(int i = 0;i<4;i++){
-	serialPutchar(fd,command);
-	}
-	for(int j = 0;j<4;j++){
-	int answer = serialGetchar(fd);
-	cout << answer << "\n";
-	}
-}
-void ArduinoCommand2(int power, int degrees){
+void ArduinoCommand(int power, int degrees){
 	int Steer = NEUTRAL;
 	int Force = NEUTRAL;
 	if (degrees > NEUTRAL){		Steer = 2*NEUTRAL;}
@@ -48,35 +41,43 @@ void ArduinoCommand2(int power, int degrees){
 	 else if(power <- NEUTRAL){	Force = 0;} 
 	 else {				Force += power;}
 //	cout << "Sending Message: " << Force << " " << Steer << " " << Force << " " << Steer << "\n";
+	SendCommand(Force,Steer);
+}
+
+void SendCommand(int Force, int Steer){
+	serialFlush(fd);
+// Control Bytes
+	serialPutchar(fd,222);
+	serialPutchar(fd,222);
 //Send Force and Steer values
 	serialPutchar(fd,int(Force));
+	cout << Force << " " << Steer;
 	serialPutchar(fd,int(Steer));
-//Control bytes -> Can maybe be used for other data later...
-	serialPutchar(fd,int(Force));
-	serialPutchar(fd,int(Steer));
+	//Control bytes -> Can maybe be used for other data later...
+//	serialPutchar(fd,int(Force));
+//	serialPutchar(fd,int(Steer));
 }
 void goLeft(int degrees, int power){
-//	cout << "Turn Left\n";
-	ArduinoCommand2(power,degrees);
+	ArduinoCommand(power,degrees);
 }
 void goRight(int degrees, int power){
-//	cout << "Turn Right\n";
-	ArduinoCommand2(power,-degrees);
+	ArduinoCommand(power,-degrees);
 }
 void goForward(int power){
-//	cout << "Go Forward\n";
-	ArduinoCommand2(power,0);
+	ArduinoCommand(power,0);
 }
 void goBackward(int power){
-//	cout << "Go Backward\n";
-	ArduinoCommand2(-power,0);
+	ArduinoCommand(-power,0);
 }
 void carStop(){
 //	cout << "Stop!\n";
-	ArduinoCommand2(0,0);
+	ArduinoCommand(0,0);
 }
 void uTurn(){
-	goBackward(20);
+	cout<<"\nU TURN!";
+/*	goBackward(5);
 	goLeft(90,10);
 	goLeft(90,10);
+*/
+	SendCommand(255,255);
 }

@@ -1,65 +1,70 @@
+//#include "findSign.cpp"
+
 using namespace cv;
 using namespace std;
 
 //Variables
 enum DriveCommand {DRIVE_STRAIGHT=0,TURN_LEFT,TURN_RIGHT};
+enum SignCommand {PREF_NONE = 0, PREF_LEFT,PREF_RIGHT,PREF_STRAIGHT};
 float pctCropTop = 0.60; //0.1 - Previous: 0.1
-float pctCropBottom = 0.25;
-int iThresh = 45; //outside: 60
+float pctCropBottom = 0.1;
+int iThresh = 70; //outside: 60
 const int maxLines = 200;
 const int curved = 1;
 const int straight = 1;
 const int compRatio = 2;
 const int SHOW_LINES = 1;
 vector<Vec4i> lines;
-int md = 8;
-int dirThresh = 10;
+float pctFree = 0.25;
+int md = 6;
+int dirThresh = 3; //10;
+int borThresh = 8;
+int angles = 0;
+bool leftFree, rightFree;
+vector<int> max_angle,max_range;
 
 //Functions
-int findPath(InputArray src, OutputArray dst, bool display, double dWidth, double dHeight);
+int findPath(InputArray src, OutputArray dst, bool display, double dWidth, double dHeight, int iDirSign);
 void processFrame(InputArray src,OutputArray dst,OutputArray hough, double dWidth, double dHeight);
 void processFrame_adaptive(InputArray src,OutputArray dst,OutputArray hough, double dWidth, double dHeight);
 int searchLongestLine_Angle(InputArray src,OutputArray dst, double dWidth, double dHeight);
 int searchLongestLine_Straight(InputArray src,OutputArray dst, double dWidth, double dHeight);
 int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight);
 
-int findPath(InputArray src, OutputArray dst, bool display, double dWidth, double dHeight){
+int findPath(InputArray src, OutputArray dst, bool display, double dWidth, double dHeight, int iDirSign){
 	Mat thresh,hough;
 	vector<Mat> Images;
-	Mat command(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
-	processFrame(src,thresh,hough,dWidth,dHeight);
-	//processFrame_adaptive(src_crop,thresh,hough,dWidth,dHeight);
-/*
-	//Process results into a working roadmap
-	int a_c = -1, a_s = -1;
-	if (curved){a_c = searchLongestLine_Angle(hough,hough,dWidth/compRatio,dHeight/compRatio);}
-	if (straight){a_s = searchLongestLine_Straight(hough,hough,dWidth/compRatio,dHeight/compRatio);}
-	//Calculate direction
-	double d_c, d_s;
-	d_c = a_c - maxLines/2;
-	d_s = a_s - maxLines/2;
-
-	int direction = 0;
-	if (curved && straight){
-		if(	  abs(d_s-maxLines/8)<maxLines/8){	direction = DRIVE_STRAIGHT;cout<<"\tGo Forward";
-		}else if( d_c>-maxLines/8){	direction = TURN_LEFT;cout<<"\tTurn Left";
-		}else if( d_c<maxLines/8){	direction = TURN_RIGHT;cout<<"\tTurn Right";
-		}
-	}
-	else if (curved){
-		if(	  d_c>-maxLines/8){	direction = TURN_LEFT;cout<<"Turn Left\n";
-		}else if( d_c<maxLines/8){	direction = TURN_RIGHT;cout<<"Turn Right\n";
-		}else{				direction = DRIVE_STRAIGHT;cout<<"Go Forward\n";
-		}
-	}
-	else if (straight){
-		if(	   d_s<-maxLines/8){	direction = TURN_LEFT;cout<<"Turn Left\n";
-		}else if(  d_s>maxLines/8){	direction = TURN_RIGHT;cout<<"Turn Right\n";
-		}else{	   			direction = DRIVE_STRAIGHT;cout<<"Go Forward\n";
-		}
-	}
-*/
+	Mat command(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));processFrame(src,thresh,hough,dWidth,dHeight);
+	
 	int direction = findFreeSpace(hough,hough,dWidth/compRatio,dHeight/compRatio);
+	if ((iDirSign == PREF_LEFT)&&(direction == DRIVE_STRAIGHT)){
+		cout << "Search Left!";
+		leftFree = true;		
+		for (int i = 2; i <= maxLines / 8; i++){
+			if ((max_range[i]/dHeight) < (1-pctFree)){
+				leftFree = false;
+			}
+		}
+		if (leftFree){
+			direction = TURN_LEFT;
+			cout <<"Turn Left (Prefer)";
+		}
+	} else if ((iDirSign == PREF_RIGHT)&&(direction == DRIVE_STRAIGHT)){
+		cout <<"Search Right!";
+		rightFree = true;		
+		for (int i = maxLines * 7 /8; i <= maxLines; i++){
+			if (max_range[i]/dHeight < (1-pctFree)){
+				rightFree = false;
+			}
+		}
+		if (rightFree){
+			direction = TURN_RIGHT;
+			cout <<"Turn Right (Prefer)";
+		}
+	}
+	max_range.clear();
+	max_angle.clear();
+
 	hough.copyTo(dst);
 	if (display){
 	//Display different versions
@@ -80,7 +85,7 @@ int findPath(InputArray src, OutputArray dst, bool display, double dWidth, doubl
 void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dWidth, double dHeight) {
 	//Apply Threshold
 	Mat gray,canny, cmp(int(dHeight/compRatio),int(dWidth/compRatio),CV_8UC3);
-        Mat canvas(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
+    Mat canvas(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
 	//Resize
 	resize(src,cmp,cmp.size(),0,0,0);
 	//Change color to Gray
@@ -180,9 +185,8 @@ int searchLongestLine_Angle(InputArray src,OutputArray dst, double dWidth, doubl
 	return angle;
 }
 int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight){
-	vector<int> max_angle,max_range;
 	int direction = DRIVE_STRAIGHT;
-	int favor_left = 0, favor_right = 0;
+	long double favor_left = 0, favor_right = 0;
 	bool nospace = false;
 	Mat temp;
 	src.copyTo(temp);
@@ -201,8 +205,7 @@ int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight
 			}
 		}
 	}
-
-	int dHeight_New = dHeight * 0.5;// / compRatio;
+	int dHeight_New = dHeight * pctFree;// / compRatio;
 	int dWidth_Start = int(dWidth/md);
 	int dWidth_Stop = int(dWidth*(md-1)/md);
 	Point d1l(dWidth_Start,dHeight);
@@ -216,23 +219,40 @@ int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight
 		line(temp,d2l,d2h,Scalar(255,0,0),2,3);
 	}
 	for(int j = 1; j <= maxLines-1; j++){ //int j = int((maxLines)/md); j <= int((maxLines) * (md-1)/md); j++
-		if ((max_angle[j] >= dWidth_Start) && (max_angle[j] <= dWidth_Stop) && (max_range[j] < dHeight_New)){ //(direction == DRIVE_STRAIGHT)
+		if ((max_angle[j] >= dWidth_Start) && (max_angle[j] <= dWidth_Stop) && (max_range[j] < dHeight * (1-pctFree))){ //(direction == DRIVE_STRAIGHT)
 			nospace = true;
 			if (j < maxLines / 2){
-				favor_right++;
+				favor_right+= 1 - (max_range[j]/dHeight);
 			} else {
-				favor_left++;
+				favor_left+= 1 - (max_range[j]/dHeight);
 			}
 		}
 	}
-	if ((nospace)&&((favor_left > dirThresh)||(favor_right >dirThresh))){
-		if (favor_left > favor_right){
-			direction = TURN_LEFT; cout << "\tTurn Left   " << favor_right << " " << favor_left ;
-		} else if(favor_right > favor_left){
-			direction = TURN_RIGHT;cout << "\tTurn Right  " << favor_right << " " << favor_left;
+	if (nospace){
+	if ((favor_left > borThresh)&&(favor_right > borThresh)){
+		favor_right = 0;
+		favor_left = 0;
+		for(int j = 1; j <= maxLines-2; j++){ //int j = int((maxLines)/md); j <= int((maxLines) * (md-1)/md); j++
+				if (j < maxLines / 2){
+					favor_right+= 1 - (max_range[j]/dHeight);
+				} else {
+					favor_left+= 1 - (max_range[j]/dHeight);
+				}
 		}
-	} else cout << "\tGo Straight " << favor_right << " " << favor_left << " ";
+		}
+	if ((favor_left > dirThresh)||(favor_right > dirThresh)){
+		if (favor_left > favor_right){
+			direction = TURN_LEFT; 
+			cout << "\tTurn Left   " << favor_right << " " << favor_left ;
+		} else if(favor_right > favor_left){
+			direction = TURN_RIGHT;
+			cout << "\tTurn Right  " << favor_right << " " << favor_left;
+		} else {cout << "\tGo Straight " << favor_right << " " << favor_left << " ";}
+	} else {cout << "\tGo Straight " << favor_right << " " << favor_left << " ";
+	}} else cout << "\tGo Straight " << favor_right << " " << favor_left << " ";
+	
 	temp.copyTo(dst);
+//	cout << "Direction" << direction;
 	return direction;
 
 }

@@ -24,6 +24,8 @@ int main ()
 			goRight(10,10);
 		} else if((command == "f") || (command == "forward")){
 			goForward(10);
+		} else if((command == "u") || (command == "uturn")){
+			uTurn();
 		}
 	}
 	/*cout << "Starting...\n";
