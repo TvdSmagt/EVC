@@ -27,10 +27,10 @@ double fps_total = 0;
 int FrameSkip = 1;
 double dWidth,dHeight;
 char keyboard = 0 ; //input from keyboard
-const int INPUT_VIDEO = 0; //1=VIDEO, 0=CAMERA
-const int SAVE_VIDEO = 0; //1=SAVE, 0=DONT SAVE
-const int DISPLAY_VIDEO = 0; //1=DISPLAY,0=NO_DISPLAY
-const int ARDUINO_CONNECT = 1; //1=CONNECT, 0=DONT_CONNECT
+const int INPUT_VIDEO = 1; //1=VIDEO, 0=CAMERA
+const int SAVE_VIDEO = 1; //1=SAVE, 0=DONT SAVE
+const int DISPLAY_VIDEO = 1; //1=DISPLAY,0=NO_DISPLAY
+const int ARDUINO_CONNECT = 0; //1=CONNECT, 0=DONT_CONNECT
 const int P_DRIVE = 4;
 int angle_turned = 0;
 int SignDirection = SIGN_NONE;
@@ -64,7 +64,7 @@ void help()
     << "--------------------------------------------------------------------------" << endl
     << "This program is used for the Embedded Visual Control Project for Group 7."  << endl                                                                                   				     << endl
     << "Usage:"                                                                     << endl
-    << "./EVC_FULL {-vid <video filename>}"                    			    << endl
+    << "./EVC_FULL <video filename>"                    			    << endl
     << "for example: ./EVC_FULL ./demo_1.h264"                                      << endl
     << "--------------------------------------------------------------------------" << endl
     << endl;
@@ -105,6 +105,9 @@ void processVideo(char* videoFilename) {
         if (ITER % FrameSkip==0 && !src.empty() && ITER > 0){
 			cout << "\n" << ITER << "\t Processing image... : ";
 			//Crop image to remove top part which is not of interest
+			if(SAVE_STEPS){
+			imwrite("./stills/source.png",src);
+			}
 			src_path = src(myROI);
 			if(SAVE_VIDEO){oVideoWriter.write(src);}
 

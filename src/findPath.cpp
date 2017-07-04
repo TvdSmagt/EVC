@@ -6,19 +6,22 @@ using namespace std;
 //Variables
 enum DriveCommand {DRIVE_STRAIGHT=0,TURN_LEFT,TURN_RIGHT};
 enum SignCommand {PREF_NONE = 0, PREF_LEFT,PREF_RIGHT,PREF_STRAIGHT};
-float pctCropTop = 0.55; //0.1 - Previous: 0.1
-float pctCropBottom = 0.0;
-int iThresh = 70; //outside: 60
-const int maxLines = 200;
+float pctCropTop = 0.20; //0.1 - Previous: 0.1
+float pctCropBottom = 0.3;
+int iThresh = 65; //outside: 60
+int aThresh = 20;
+const int maxLines = 255;
 const int curved = 1;
 const int straight = 1;
 const int compRatio = 2;
 const int SHOW_LINES = 1;
+const int SAVE_STEPS = 1;
+const String img_loc = "/stills/";
 vector<Vec4i> lines;
-float pctFree = 0.30;
+float pctFree = 0.25;
 int md = 6;
 int dirThresh = 3; //10;
-int borThresh = 8;
+int borThresh = 1;
 int angles = 0;
 bool leftFree, rightFree;
 vector<int> max_angle,max_range;
@@ -63,7 +66,7 @@ int findPath(InputArray src, OutputArray dst, bool display, double dWidth, doubl
 	}
 	max_range.clear();
 	max_angle.clear();
-
+	if(SAVE_STEPS){imwrite("./stills/findPath.png",hough);}
 	hough.copyTo(dst);
 	if (display){
 	//Display different versions
@@ -82,25 +85,28 @@ int findPath(InputArray src, OutputArray dst, bool display, double dWidth, doubl
 }
 
 void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dWidth, double dHeight) {
-	//Apply Threshold
-	Mat gray,canny, cmp(int(dHeight/compRatio),int(dWidth/compRatio),CV_8UC3);
-    Mat canvas(dHeight,dWidth,CV_8UC3,Scalar(0,0,0));
-	//Resize
-	resize(src,cmp,cmp.size(),0,0,0);
-	//Change color to Gray
-	cvtColor(cmp,gray,CV_RGB2GRAY);
-	//cout << "\n Set Threshold";
-	threshold(gray,thresh,iThresh,255,THRESH_BINARY_INV);
-	//Canny
-	//Canny(thresh,canny,20,50,3);
-	//cout << "\n Draw Houghlines";
-	HoughLinesP( thresh, lines, 1, CV_PI/180, 40/compRatio, 0/compRatio, 0);//200,100,0
-	for( size_t i = 0; i < lines.size(); i++ )
+	//Initialize Matrices 
+	Mat gray,canny, cmp(int(dHeight/compRatio),int(dWidth/compRatio),CV_8UC3),canvas(dHeight/compRatio,dWidth/compRatio,CV_8UC3,Scalar(0,0,0));
+	resize(src,cmp,cmp.size(),0,0,0); 											//Resize to reduce points and improve performance
+	cvtColor(cmp,gray,CV_RGB2GRAY); 											//Convert to grayscale for improved performance
+	cv::Scalar iThresh_avg = mean(src);											//Calculate average value of the image
+	cout << iThresh_avg[0];
+	threshold(gray,thresh,int(iThresh_avg[0])-aThresh,255,THRESH_BINARY_INV); 			//Set Threshold
+//	adaptiveThreshold(gray,thresh,255,ADAPTIVE_THRESH_MEAN_C,THRESH_BINARY_INV,3,0);
+	HoughLinesP( thresh, lines, 1, CV_PI/180, 40/compRatio, 0/compRatio, 0);	//Calculate the HoughLines
+	for( size_t i = 0; i < lines.size(); i++ )									//Draw Houghlines
 	{
 		line(canvas, Point(lines[i][0], lines[i][1]),
 			Point(lines[i][2], lines[i][3]), Scalar(255,255,255), 8, 3 );
 	}
-	canvas.copyTo(hough);
+	if(SAVE_STEPS){
+	imwrite("./stills/cropped.png",src);
+	imwrite("./stills/compressed.png",cmp);
+	imwrite("./stills/gray.png",gray);
+	imwrite("./stills/thresh.png",thresh);
+	imwrite("./stills/hough.png",canvas);
+	}
+	canvas.copyTo(hough);														//Print Canvas
 }
 int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight){
 	int direction = DRIVE_STRAIGHT;
@@ -130,11 +136,19 @@ int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight
 	Point d1h(dWidth_Start,dHeight_New);
 	Point d2l(dWidth_Stop,dHeight);
 	Point d2h(dWidth_Stop,dHeight_New);
+	int dWidth_Left = int(dWidth/8);
+	int dWidth_Right = int(dWidth*7/8);
+	Point l1h(dWidth_Left,0);
+	Point l1l(dWidth_Left,dHeight);
+	Point r1h(dWidth_Right,0);
+	Point r1l(dWidth_Right,dHeight);
 
 	if(SHOW_LINES){
 		line(temp,d1l,d1h,Scalar(255,0,0),2,3);
 		line(temp,d1h,d2h,Scalar(255,0,0),2,3);
 		line(temp,d2l,d2h,Scalar(255,0,0),2,3);
+		line(temp,l1h,l1l,Scalar(0,0,255),2,3);
+		line(temp,r1h,r1l,Scalar(0,0,255),2,3);
 	}
 	for(int j = 1; j <= maxLines-1; j++){ //int j = int((maxLines)/md); j <= int((maxLines) * (md-1)/md); j++
 		if ((max_angle[j] >= dWidth_Start) && (max_angle[j] <= dWidth_Stop) && (max_range[j] < dHeight * (1-pctFree))){ //(direction == DRIVE_STRAIGHT)
@@ -151,9 +165,9 @@ int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight
 		favor_right = 0;
 		favor_left = 0;
 		for(int j = 1; j <= maxLines-2; j++){ //int j = int((maxLines)/md); j <= int((maxLines) * (md-1)/md); j++
-				if (j < maxLines / 2){
+				if (j < maxLines / 8){
 					favor_right+= 1 - (max_range[j]/dHeight);
-				} else {
+				} else if (j > maxLines * 7/8) {
 					favor_left+= 1 - (max_range[j]/dHeight);
 				}
 		}
