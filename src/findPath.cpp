@@ -6,20 +6,21 @@ using namespace std;
 //Variables
 enum DriveCommand {DRIVE_STRAIGHT=0,TURN_LEFT,TURN_RIGHT};
 enum SignCommand {PREF_NONE = 0, PREF_LEFT,PREF_RIGHT,PREF_STRAIGHT};
-float pctCropTop = 0.20; //0.1 - Previous: 0.1
-float pctCropBottom = 0.3;
+float pctCropTop = 0.25; //0.1 - Previous: 0.1
+float pctCropBottom = 0.4;
 int iThresh = 65; //outside: 60
 int aThresh = 20;
-const int maxLines = 255;
+const int maxLines = 220;
 const int curved = 1;
 const int straight = 1;
 const int compRatio = 2;
 const int SHOW_LINES = 1;
-const int SAVE_STEPS = 1;
+const int SAVE_STEPS = 0;
 const String img_loc = "/stills/";
 vector<Vec4i> lines;
-float pctFree = 0.25;
+float pctFree = 0.10;
 int md = 6;
+int mt = 16;
 int dirThresh = 3; //10;
 int borThresh = 1;
 int angles = 0;
@@ -136,8 +137,8 @@ int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight
 	Point d1h(dWidth_Start,dHeight_New);
 	Point d2l(dWidth_Stop,dHeight);
 	Point d2h(dWidth_Stop,dHeight_New);
-	int dWidth_Left = int(dWidth/8);
-	int dWidth_Right = int(dWidth*7/8);
+	int dWidth_Left = int(dWidth/mt);
+	int dWidth_Right = int(dWidth*(mt-1)/mt);
 	Point l1h(dWidth_Left,0);
 	Point l1l(dWidth_Left,dHeight);
 	Point r1h(dWidth_Right,0);
@@ -164,12 +165,19 @@ int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight
 	if ((favor_left > borThresh)&&(favor_right > borThresh)){
 		favor_right = 0;
 		favor_left = 0;
-		for(int j = 1; j <= maxLines-2; j++){ //int j = int((maxLines)/md); j <= int((maxLines) * (md-1)/md); j++
-				if (j < maxLines / 8){
+		//cout << "\t" << (maxLines / 8) << " \t" << ((maxLines * 7)/8);
+		for(int j = 3; j <= maxLines-2; j++){ //int j = int((maxLines)/md); j <= int((maxLines) * (md-1)/md); j++
+				if (j < (maxLines / mt)){
 					favor_right+= 1 - (max_range[j]/dHeight);
-				} else if (j > maxLines * 7/8) {
-					favor_left+= 1 - (max_range[j]/dHeight);
+					//cout << "\tl: " << j;
+					//cout << "\nl" << (1-(max_range[j]/dHeight));
 				}
+				if (j > (maxLines - (maxLines/mt))){
+					favor_left+= 1 - (max_range[j]/dHeight);
+					//cout << "\tr: " << j;
+					//cout << "\nr" << (1-(max_range[j]/dHeight));
+				}
+				//cout << "\t " << (max_range[j]/dHeight);
 		}
 		}
 	if ((favor_left > dirThresh)||(favor_right > dirThresh)){
