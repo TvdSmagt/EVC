@@ -7,9 +7,10 @@ using namespace std;
 enum DriveCommand {DRIVE_STRAIGHT=0,TURN_LEFT,TURN_RIGHT};
 enum SignCommand {PREF_NONE = 0, PREF_LEFT,PREF_RIGHT,PREF_STRAIGHT};
 float pctCropTop = 0.25; //0.1 - Previous: 0.1
-float pctCropBottom = 0.4;
+float pctCropBottom = 0.45;
 int iThresh = 65; //outside: 60
 int aThresh = 20;
+double mThresh = 0.8;
 const int maxLines = 220;
 const int curved = 1;
 const int straight = 1;
@@ -92,7 +93,7 @@ void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dW
 	cvtColor(cmp,gray,CV_RGB2GRAY); 											//Convert to grayscale for improved performance
 	cv::Scalar iThresh_avg = mean(src);											//Calculate average value of the image
 	cout << iThresh_avg[0];
-	threshold(gray,thresh,int(iThresh_avg[0])-aThresh,255,THRESH_BINARY_INV); 			//Set Threshold
+	threshold(gray,thresh,int(iThresh_avg[0])*mThresh,255,THRESH_BINARY_INV); 			//Set Threshold
 //	adaptiveThreshold(gray,thresh,255,ADAPTIVE_THRESH_MEAN_C,THRESH_BINARY_INV,3,0);
 	Canny(thresh,canny,0,0);
 	int kernel_size = 3;
@@ -127,7 +128,12 @@ int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight
 	Rect bounds(0, 0, dWidth, dHeight);
 	for(int i = 1; i<=maxLines-1; i++) // Loop over lines
 	{
-		Point cen(int(dWidth*i/maxLines),int(dHeight));
+		Point cen;
+//		if((i > (maxLines /4)) && (i < (maxLines - (maxLines/4)))){
+//			cen = Point(int(dWidth*i/maxLines),int(dHeight*0.8));
+//		} else {
+			cen = Point(int(dWidth*i/maxLines),int(dHeight));
+//		}
 		for (int r = 5; r <= dHeight+1; r++) //Find Line End
 		{
 			Point p2(dWidth*i/maxLines,dHeight-r);

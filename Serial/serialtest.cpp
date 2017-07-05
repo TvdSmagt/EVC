@@ -27,6 +27,7 @@ int main ()
 		} else if((command == "u") || (command == "uturn")){
 			uTurn();
 		}
+		ReceiveCommand();
 	}
 	/*cout << "Starting...\n";
 	//int fd = serialOpen ("/dev/ttyACM0",9600);

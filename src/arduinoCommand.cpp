@@ -12,12 +12,14 @@ int fd;
 bool ArduinoOpen();
 void ArduinoCommand(int power, int degrees);
 void SendCommand(int Force, int Steer);
+void ReceiveCommand();
 void goLeft(int degrees, int power);
 void goRight(int degrees, int power);
 void goForward(int power);
 void goBackward(int power);
 void carStop();
 void uTurn();
+int RcvBits[4];
 
 bool ArduinoOpen(){
 	cout<<"\n----------------------------------------------------";
@@ -42,10 +44,11 @@ void ArduinoCommand(int power, int degrees){
 	 else {				Force += power;}
 //	cout << "Sending Message: " << Force << " " << Steer << " " << Force << " " << Steer << "\n";
 	SendCommand(Force,Steer);
+	ReceiveCommand();
 }
 
 void SendCommand(int Force, int Steer){
-	serialFlush(fd);
+//	serialFlush(fd);
 // Control Bytes
 	serialPutchar(fd,222);
 	serialPutchar(fd,222);
@@ -56,6 +59,19 @@ void SendCommand(int Force, int Steer){
 	//Control bytes -> Can maybe be used for other data later...
 //	serialPutchar(fd,int(Force));
 //	serialPutchar(fd,int(Steer));
+}
+
+void ReceiveCommand(){
+	if (serialDataAvail(fd)>4){
+	while (RcvBits[0]!= 97){
+		RcvBits[0] = serialGetchar(fd);
+		cout << "\t" << RcvBits[0];
+	}
+		for(int i = 1;i<4;i++){
+			RcvBits[i] = serialGetchar(fd);
+			cout << "\t" << RcvBits[i];
+		}
+	}
 }
 void goLeft(int degrees, int power){
 	ArduinoCommand(power,degrees);
