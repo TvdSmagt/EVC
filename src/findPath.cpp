@@ -87,26 +87,35 @@ int findPath(InputArray src, OutputArray dst, bool display, double dWidth, doubl
 
 void processFrame(InputArray src,OutputArray thresh,OutputArray hough, double dWidth, double dHeight) {
 	//Initialize Matrices 
-	Mat gray,canny, cmp(int(dHeight/compRatio),int(dWidth/compRatio),CV_8UC3),canvas(dHeight/compRatio,dWidth/compRatio,CV_8UC3,Scalar(0,0,0));
+	Mat gray,canny, dil,kernel, cmp(int(dHeight/compRatio),int(dWidth/compRatio),CV_8UC3),canvas(dHeight/compRatio,dWidth/compRatio,CV_8UC3,Scalar(0,0,0));
 	resize(src,cmp,cmp.size(),0,0,0); 											//Resize to reduce points and improve performance
 	cvtColor(cmp,gray,CV_RGB2GRAY); 											//Convert to grayscale for improved performance
 	cv::Scalar iThresh_avg = mean(src);											//Calculate average value of the image
 	cout << iThresh_avg[0];
 	threshold(gray,thresh,int(iThresh_avg[0])-aThresh,255,THRESH_BINARY_INV); 			//Set Threshold
 //	adaptiveThreshold(gray,thresh,255,ADAPTIVE_THRESH_MEAN_C,THRESH_BINARY_INV,3,0);
-	HoughLinesP( thresh, lines, 1, CV_PI/180, 40/compRatio, 0/compRatio, 0);	//Calculate the HoughLines
+	Canny(thresh,canny,0,0);
+	int kernel_size = 3;
+	kernel = Mat::ones(kernel_size,kernel_size,CV_32F)/ (float)(kernel_size*kernel_size);
+	dilate(canny,dil,kernel);
+
+	HoughLinesP( dil, lines, 1, CV_PI/180, 40/compRatio, 0/compRatio, 0);	//Calculate the HoughLines
 	for( size_t i = 0; i < lines.size(); i++ )									//Draw Houghlines
 	{
 		line(canvas, Point(lines[i][0], lines[i][1]),
-			Point(lines[i][2], lines[i][3]), Scalar(255,255,255), 8, 3 );
+			Point(lines[i][2], lines[i][3]), Scalar(255,255,255), 2, 3 );
 	}
 	if(SAVE_STEPS){
 	imwrite("./stills/cropped.png",src);
 	imwrite("./stills/compressed.png",cmp);
 	imwrite("./stills/gray.png",gray);
 	imwrite("./stills/thresh.png",thresh);
+	imwrite("./stills/canny.png",canny);
+	imwrite("./stills/dilate.png",dil);
 	imwrite("./stills/hough.png",canvas);
 	}
+//	dil.copyTo(thresh);
+//	dil.copyTo(hough);
 	canvas.copyTo(hough);														//Print Canvas
 }
 int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight){
@@ -183,13 +192,13 @@ int findFreeSpace(InputArray src, OutputArray dst, double dWidth, double dHeight
 	if ((favor_left > dirThresh)||(favor_right > dirThresh)){
 		if (favor_left > favor_right){
 			direction = TURN_LEFT; 
-			cout << "\tTurn Left   " << favor_right << " " << favor_left ;
+			cout << "\tTurn Left   " << favor_left << " " << favor_left ;
 		} else if(favor_right > favor_left){
 			direction = TURN_RIGHT;
-			cout << "\tTurn Right  " << favor_right << " " << favor_left;
-		} else {cout << "\tGo Straight " << favor_right << " " << favor_left << " ";}
-	} else {cout << "\tGo Straight " << favor_right << " " << favor_left << " ";
-	}} else cout << "\tGo Straight " << favor_right << " " << favor_left << " ";
+			cout << "\tTurn Right  " << favor_left << " " << favor_right;
+		} else {cout << "\tGo Straight " << favor_left << " " << favor_right << " ";}
+	} else {cout << "\tGo Straight " << favor_left << " " << favor_right << " ";
+	}} else cout << "\tGo Straight " << favor_left << " " << favor_right << " ";
 	
 	temp.copyTo(dst);
 //	cout << "Direction" << direction;
